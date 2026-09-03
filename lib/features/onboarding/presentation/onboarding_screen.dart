@@ -57,6 +57,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -116,11 +119,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Text(
                             item.title,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight
                                   .w900, // Extra bold weight matching Figma
-                              color: AppColors.textMain,
+                              color: theme.colorScheme.onSurface,
                               height: 1.25,
                               letterSpacing: -0.5,
                             ),
@@ -129,9 +132,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Text(
                             item.subtitle,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSubtle,
+                              color: theme.textTheme.bodyMedium?.color,
                               height: 1.4,
                             ),
                           ),
@@ -157,7 +160,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       shape: BoxShape.circle,
                       color: _currentIndex == index
                           ? AppColors.primary
-                          : AppColors.dotInactive,
+                          : (isDark ? Colors.white24 : AppColors.dotInactive),
                     ),
                   ),
                 ),

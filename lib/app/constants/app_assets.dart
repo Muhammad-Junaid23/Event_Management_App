@@ -1,6 +1,7 @@
 class AppAssets {
   // Logos
   static const String appLogo = 'assets/logo/app_logo.png';
+  static const String googleIcon = 'assets/icons/google.png';
 
   // Onboarding Images
   static const String onboarding1 = 'assets/images/onboarding1.png';

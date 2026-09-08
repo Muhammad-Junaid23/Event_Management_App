@@ -1,4 +1,6 @@
+import 'package:event_management_system/app/config/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/constants/app_colors.dart';
 import '../../../app/constants/app_assets.dart';
@@ -70,11 +72,12 @@ class _FeaturesScreenState extends State<FeaturesScreen> {
                       child: IconButton(
                         padding: EdgeInsets.zero,
                         icon: Icon(
-                          Icons.tune,
+                          Icons.tune_rounded,
                           size: 20,
                           color: isDark ? Colors.white : AppColors.filterIcon,
                         ),
-                        onPressed: _openFilterDialog,
+                        // onPressed: _openFilterDialog,
+                        onPressed: () {},
                       ),
                     ),
                   ],
@@ -96,6 +99,17 @@ class _FeaturesScreenState extends State<FeaturesScreen> {
                       title: 'Made in Melanin! Black History Month Social.....',
                       dateText: '28 October 2025 6:00pm GMT',
                       locationText: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
+                      onTap: () {
+                        context.push(
+                          AppRoutes.eventDetails,
+                          extra: {
+                            'title': 'Made in Melanin! Black History Month Social.....',
+                            'dateText': '28 October 2025 6:00pm GMT',
+                            'locationText':
+                                '1901 Thornridge Cir. Shiloh, Hawaii 81063',
+                          },
+                        );
+                      },
                       isFavorite: false,
                       actionButton: SizedBox(
                         width: double.infinity,

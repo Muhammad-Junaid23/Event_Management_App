@@ -1,3 +1,4 @@
+import 'package:event_management_system/app/constants/app_assets.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/constants/app_colors.dart';
@@ -10,6 +11,7 @@ class EventCard extends StatelessWidget {
   final Widget? actionButton;
   final bool isFavorite;
   final VoidCallback? onFavoriteTap;
+  final VoidCallback? onTap; // Added tap callback
 
   const EventCard({
     super.key,
@@ -20,6 +22,7 @@ class EventCard extends StatelessWidget {
     this.actionButton,
     this.isFavorite = false,
     this.onFavoriteTap,
+    this.onTap,
   });
 
   @override
@@ -33,60 +36,63 @@ class EventCard extends StatelessWidget {
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? AppColors.darkBorderInput
-              : AppColors.borderCard, // Using constant
+          color: isDark ? AppColors.darkBorderInput : AppColors.borderCard,
           width: 0.6,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner Image
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child:
-                    topWidget ??
-                    Container(
-                      height: 160,
-                      width: double.infinity,
-                      color: Colors.grey.shade300,
-                      child: const Icon(
-                        Icons.image,
-                        size: 50,
-                        color: Colors.grey,
+          // Banner Image (Clickable)
+          GestureDetector(
+            onTap: onTap,
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child:
+                      topWidget ??
+                      Container(
+                        height: 220,
+                        width: double.infinity,
+                        color: Colors.grey.shade300,
+                        child: Image.asset(
+                          AppAssets.featuresCard,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: GestureDetector(
-                  onTap: onFavoriteTap,
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      size: 18,
-                      color: isFavorite ? Colors.red : Colors.black,
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: onFavoriteTap,
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        size: 18,
+                        color: isFavorite ? Colors.red : Colors.black,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 12),
 
-          // Title
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black,
+          // Title (Clickable)
+          GestureDetector(
+            onTap: onTap,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              ),
             ),
           ),
           const SizedBox(height: 10),

@@ -1,6 +1,8 @@
 import 'package:event_management_system/features/community/presentation/community_screen.dart';
+import 'package:event_management_system/features/event_details/presentation/event_details_screen.dart';
 import 'package:event_management_system/features/favorites/presentation/favourite_screen.dart';
 import 'package:event_management_system/features/features_tab/presentation/features_screen.dart';
+import 'package:event_management_system/features/group_profile/presentation/group_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -31,6 +33,8 @@ class AppRoutes {
   static const String community = '/community';
   static const String favourite = '/favourite';
   static const String settings = '/settings';
+  static const String groupProfile = '/group-profile';
+  static const String eventDetails = '/event-details';
 
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
       GlobalKey<NavigatorState>();
@@ -47,6 +51,31 @@ class AppRoutes {
       ),
       GoRoute(path: login, builder: (context, state) => const LoginScreen()),
       GoRoute(path: signup, builder: (context, state) => const SignupScreen()),
+
+      // Detail Screens (Pushed over the entire screen, hiding bottom nav)
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: groupProfile,
+        builder: (context, state) => const GroupProfileScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: eventDetails,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return EventDetailsScreen(
+            title:
+                extra?['title'] ??
+                'Made in Melanin! Black History Month Social.....',
+            dateText: extra?['dateText'] ?? '28 October 2025 6:00pm GMT',
+            locationText:
+                extra?['locationText'] ??
+                '1901 Thornridge Cir. Shiloh, Hawaii 81063',
+            description: extra?['description'] ?? '',
+            imagePath: extra?['imagePath'] ?? '',
+          );
+        },
+      ),
 
       // Bottom Navigation Stateful Shell Routes
       StatefulShellRoute.indexedStack(

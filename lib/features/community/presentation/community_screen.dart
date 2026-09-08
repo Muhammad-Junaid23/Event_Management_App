@@ -1,17 +1,85 @@
+import 'package:event_management_system/app/config/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/constants/app_colors.dart';
 import '../../../app/constants/app_assets.dart';
 
-class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({super.key});
+// -----------------------------------------------------------------------------
+// Poll Data Model
+// -----------------------------------------------------------------------------
+class PollOption {
+  final String label;
+  final String title;
+  final String votes;
 
-  @override
-  State<CommunityScreen> createState() => _CommunityScreenState();
+  const PollOption({
+    required this.label,
+    required this.title,
+    required this.votes,
+  });
 }
 
-class _CommunityScreenState extends State<CommunityScreen> {
-  int _selectedPollOption = 0;
+class CommunityPoll {
+  final String id;
+  final String imagePath;
+  final String title;
+  final List<PollOption> options;
+  final String timeAgo;
+
+  const CommunityPoll({
+    required this.id,
+    required this.imagePath,
+    required this.title,
+    required this.options,
+    required this.timeAgo,
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Main Community Screen
+// -----------------------------------------------------------------------------
+class CommunityScreen extends StatelessWidget {
+  const CommunityScreen({super.key});
+
+  final List<CommunityPoll> _polls = const [
+    CommunityPoll(
+      id: 'poll_1',
+      imagePath: AppAssets.featuresCard,
+      title: 'Made in Melanin! Black History Month Social',
+      timeAgo: '12hr ago',
+      options: [
+        PollOption(
+          label: 'A.',
+          title: 'Made in Melanin! Black History Month Social',
+          votes: '12k Votes',
+        ),
+        PollOption(
+          label: 'B.',
+          title: 'Made in Melanin! Black History Month Social',
+          votes: '12k Votes',
+        ),
+      ],
+    ),
+    CommunityPoll(
+      id: 'poll_2',
+      imagePath: AppAssets.featuresCard,
+      title: 'Annual Tech Innovators Meetup 2026',
+      timeAgo: '5hr ago',
+      options: [
+        PollOption(
+          label: 'A.',
+          title: 'In-Person Networking Session',
+          votes: '8k Votes',
+        ),
+        PollOption(
+          label: 'B.',
+          title: 'Virtual Livestream & Q&A',
+          votes: '15k Votes',
+        ),
+      ],
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +97,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Top Group Bar Header
+              // Header
               Container(
                 color: AppColors.primary,
                 padding: const EdgeInsets.symmetric(
@@ -38,10 +106,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
                 child: Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 18,
                       backgroundColor: Colors.white24,
-                      child: Icon(Icons.groups, color: Colors.white, size: 20),
+                      child: ClipOval(
+                        child: Image.asset(
+                          AppAssets.businessGroup,
+                          width: 36,
+                          height: 36,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     const Text(
@@ -55,43 +130,56 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     const Spacer(),
                     IconButton(
                       icon: const Icon(Icons.more_vert, color: Colors.white),
-                      onPressed: () {},
+                      onPressed: () {
+                        context.push(AppRoutes.groupProfile);
+                      },
                     ),
                   ],
                 ),
               ),
 
-              // Community List
+              // Community List Feed
               Expanded(
-                child: ListView(
+                child: ListView.separated(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
-                  children: [
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkSurface : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Today',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textCardSubtitle,
+                  itemCount: _polls.length + 1,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.darkSurface
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Today',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textCardSubtitle,
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                      );
+                    }
 
-                    _buildCommunityPollCard(theme, isDark),
-                  ],
+                    final poll = _polls[index - 1];
+                    return CommunityPollCard(
+                      key: ValueKey(poll.id), // Explicit unique key per card
+                      poll: poll,
+                      isDark: isDark,
+                    );
+                  },
                 ),
               ),
             ],
@@ -100,30 +188,51 @@ class _CommunityScreenState extends State<CommunityScreen> {
       ),
     );
   }
+}
 
-  Widget _buildCommunityPollCard(ThemeData theme, bool isDark) {
+// -----------------------------------------------------------------------------
+// Individual Poll Card Widget
+// -----------------------------------------------------------------------------
+class CommunityPollCard extends StatefulWidget {
+  final CommunityPoll poll;
+  final bool isDark;
+
+  const CommunityPollCard({
+    super.key,
+    required this.poll,
+    required this.isDark,
+  });
+
+  @override
+  State<CommunityPollCard> createState() => _CommunityPollCardState();
+}
+
+class _CommunityPollCardState extends State<CommunityPollCard> {
+  int _selectedOptionIndex = 0; // Independent state instance
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: widget.isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
+          color: widget.isDark
               ? AppColors.darkBorderInput
-              : AppColors.borderCommunityCard, // Using constant
+              : AppColors.borderCommunityCard,
           width: 0.8,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner Image flush with container top border
+          // Banner Image
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-            child: Container(
-              height: 170,
+            child: SizedBox(
+              height: 220,
               width: double.infinity,
-              color: Colors.grey.shade300,
-              child: const Icon(Icons.image, size: 50, color: Colors.grey),
+              child: Image.asset(widget.poll.imagePath, fit: BoxFit.cover),
             ),
           ),
 
@@ -133,129 +242,127 @@ class _CommunityScreenState extends State<CommunityScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Made in Melanin! Black History Month Social',
+                  widget.poll.title,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
+                    color: widget.isDark ? Colors.white : Colors.black,
                   ),
                 ),
                 const SizedBox(height: 14),
 
-                // Option A
-                _buildPollOptionRow(
-                  index: 0,
-                  label: 'A.',
-                  title: 'Made in Melanin! Black History Month Social',
-                  votes: '12k Votes',
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 12),
+                // Render Poll Options using Column instead of nested ListView
+                Column(
+                  children: List.generate(widget.poll.options.length, (optIdx) {
+                    final option = widget.poll.options[optIdx];
+                    final isSelected = _selectedOptionIndex == optIdx;
 
-                // Option B
-                _buildPollOptionRow(
-                  index: 1,
-                  label: 'B.',
-                  title: 'Made in Melanin! Black History Month Social',
-                  votes: '12k Votes',
-                  isDark: isDark,
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: optIdx == widget.poll.options.length - 1
+                            ? 0
+                            : 12.0,
+                      ),
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedOptionIndex = optIdx;
+                          });
+                        },
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              option.label,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: widget.isDark
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
+                            // Radio Button Indicator
+                            Container(
+                              width: 18,
+                              height: 18,
+                              margin: const EdgeInsets.only(top: 2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.borderFilterIcon,
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: isSelected
+                                  ? Center(
+                                      child: Container(
+                                        width: 12,
+                                        height: 12,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 10),
+
+                            // Title & Vote Details
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    option.title,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                      color: widget.isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    option.votes,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: widget.isDark
+                                          ? Colors.white54
+                                          : AppColors.textCardSubtitle,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
                 ),
 
                 const SizedBox(height: 6),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    '12hr ago',
+                    widget.poll.timeAgo,
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark
+                      color: widget.isDark
                           ? Colors.white54
                           : AppColors.textCardSubtitle,
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPollOptionRow({
-    required int index,
-    required String label,
-    required String title,
-    required String votes,
-    required bool isDark,
-  }) {
-    final isSelected = _selectedPollOption == index;
-
-    return GestureDetector(
-      onTap: () => setState(() => _selectedPollOption = index),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: isDark ? Colors.white : Colors.black,
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // Radio Indicator Button
-          Container(
-            width: 18,
-            height: 18,
-            margin: const EdgeInsets.only(top: 2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.borderFilterIcon,
-                width: 1.2,
-              ),
-            ),
-            child: isSelected
-                ? Center(
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 10),
-
-          // Text and Vote Counts
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  votes,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.white54 : AppColors.textCardSubtitle,
                   ),
                 ),
               ],

@@ -15,14 +15,6 @@ class FeaturesScreen extends StatefulWidget {
 }
 
 class _FeaturesScreenState extends State<FeaturesScreen> {
-  void _openFilterDialog() {
-    showDialog(
-      context: context,
-      useRootNavigator: true,
-      barrierDismissible: true,
-      builder: (context) => const FilterBottomSheet(),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

@@ -3,6 +3,9 @@ import 'package:event_management_system/features/event_details/presentation/even
 import 'package:event_management_system/features/favorites/presentation/favourite_screen.dart';
 import 'package:event_management_system/features/features_tab/presentation/features_screen.dart';
 import 'package:event_management_system/features/group_profile/presentation/group_profile_screen.dart';
+import 'package:event_management_system/features/settings/presentation/edit_profile_screen.dart';
+import 'package:event_management_system/features/settings/presentation/notification_screen.dart';
+import 'package:event_management_system/features/settings/presentation/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,15 +15,6 @@ import 'package:event_management_system/features/onboarding/presentation/onboard
 import 'package:event_management_system/features/auth/presentation/login_screen.dart';
 import 'package:event_management_system/features/auth/presentation/signup_screen.dart';
 import 'package:event_management_system/features/home/presentation/home_screen.dart';
-
-// Placeholder screens for remaining tabs
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Settings')));
-}
 
 class AppRoutes {
   // Static Route Paths
@@ -35,6 +29,8 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String groupProfile = '/group-profile';
   static const String eventDetails = '/event-details';
+  static const String editProfile = '/edit-profile';
+  static const String notification = '/notification';
 
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
       GlobalKey<NavigatorState>();
@@ -52,7 +48,16 @@ class AppRoutes {
       GoRoute(path: login, builder: (context, state) => const LoginScreen()),
       GoRoute(path: signup, builder: (context, state) => const SignupScreen()),
 
-      // Detail Screens (Pushed over the entire screen, hiding bottom nav)
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: editProfile,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: notification,
+        builder: (context, state) => NotificationScreen(),
+      ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: groupProfile,
@@ -71,7 +76,7 @@ class AppRoutes {
             locationText:
                 extra?['locationText'] ??
                 '1901 Thornridge Cir. Shiloh, Hawaii 81063',
-            description: extra?['description'] ?? '',
+            description: extra?['description'] ?? 'Lorem ipsum dolor sit amet consectetur. Sed volutpat euismod enim accumsan quam posuere. Tortor pretium lorem dui metus amet in sed. Sodales volutpat maecenas et quisque nibh ultrices in nulla. Enim fames quam turpis pellentesque vivamus massa.',
             imagePath: extra?['imagePath'] ?? '',
           );
         },

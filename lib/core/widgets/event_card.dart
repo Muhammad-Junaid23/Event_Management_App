@@ -67,14 +67,13 @@ class EventCard extends StatelessWidget {
                   right: 10,
                   child: GestureDetector(
                     onTap: onFavoriteTap,
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.white,
-                      child: Icon(
+                    child: IconButton(
+                      icon: Icon(
                         isFavorite ? Icons.favorite : Icons.favorite_border,
                         size: 18,
-                        color: isFavorite ? Colors.red : Colors.black,
+                        color: isFavorite ? Colors.red : Colors.white,
                       ),
+                      onPressed: () {},
                     ),
                   ),
                 ),

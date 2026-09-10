@@ -40,7 +40,8 @@ class CommunityPoll {
 // Main Community Screen
 // -----------------------------------------------------------------------------
 class CommunityScreen extends StatelessWidget {
-  const CommunityScreen({super.key});
+  final bool isAdmin;
+  const CommunityScreen({super.key, this.isAdmin = true});
 
   final List<CommunityPoll> _polls = const [
     CommunityPoll(
@@ -87,6 +88,34 @@ class CommunityScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      floatingActionButton: isAdmin
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'voteBtn',
+                  onPressed: () => context.push(AppRoutes.createVote),
+                  icon: const Icon(Icons.how_to_vote, color: Colors.white),
+                  label: const Text(
+                    'Vote',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: AppColors.primary,
+                ),
+                const SizedBox(height: 10),
+                FloatingActionButton.extended(
+                  heroTag: 'eventBtn',
+                  onPressed: () => context.push(AppRoutes.createEvent),
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: const Text(
+                    'Event',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: AppColors.primary,
+                ),
+              ],
+            )
+          : null,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(

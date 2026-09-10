@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/constants/app_colors.dart';
-import '../../../app/constants/app_assets.dart';
-import '../../../core/widgets/event_card.dart';
+import 'package:event_management_system/app/constants/app_colors.dart';
+import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/core/widgets/event_card.dart';
 
 class GroupProfileScreen extends StatelessWidget {
   final String groupName;

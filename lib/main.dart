@@ -1,11 +1,23 @@
+import 'package:event_management_system/features/auth/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/config/routes.dart';
-import 'app/config/theme.dart';
+import 'app/theme/theme.dart';
 
-void main() {
-  runApp(const ProviderScope(child: EventManagementApp()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final sharedPreferences = await SharedPreferences.getInstance();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      ],
+      child: const EventManagementApp(),
+    ),
+  );
 }
 
 class EventManagementApp extends StatelessWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/constants/app_colors.dart';
+import 'package:event_management_system/app/constants/app_colors.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});

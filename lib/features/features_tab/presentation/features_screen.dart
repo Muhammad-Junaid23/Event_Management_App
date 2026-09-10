@@ -2,9 +2,9 @@ import 'package:event_management_system/app/config/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/constants/app_colors.dart';
-import '../../../app/constants/app_assets.dart';
-import '../../../core/widgets/event_card.dart';
+import 'package:event_management_system/app/constants/app_colors.dart';
+import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/core/widgets/event_card.dart';
 
 class FeaturesScreen extends StatefulWidget {
   const FeaturesScreen({super.key});

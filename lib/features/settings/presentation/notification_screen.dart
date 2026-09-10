@@ -20,7 +20,7 @@ class NotificationScreen extends StatelessWidget {
     8,
     (index) => NotificationModel(
       text: 'Lorem ipsum dolor sit amet consectetur.',
-      time: '4:00pm',
+      time: '4:00 PM',
       isUnread: index < 3, // Top 3 matching red indicators in design
     ),
   );

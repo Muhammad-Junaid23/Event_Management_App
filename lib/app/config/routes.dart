@@ -1,4 +1,6 @@
 import 'package:event_management_system/features/community/presentation/community_screen.dart';
+import 'package:event_management_system/features/event_details/presentation/create_event_screen.dart';
+import 'package:event_management_system/features/event_details/presentation/create_vote_screen.dart';
 import 'package:event_management_system/features/event_details/presentation/event_details_screen.dart';
 import 'package:event_management_system/features/favorites/presentation/favourite_screen.dart';
 import 'package:event_management_system/features/features_tab/presentation/features_screen.dart';
@@ -31,6 +33,8 @@ class AppRoutes {
   static const String eventDetails = '/event-details';
   static const String editProfile = '/edit-profile';
   static const String notification = '/notification';
+  static const String createEvent = '/create-event';
+  static const String createVote = '/create-vote';
 
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
       GlobalKey<NavigatorState>();
@@ -80,6 +84,16 @@ class AppRoutes {
             imagePath: extra?['imagePath'] ?? '',
           );
         },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: createEvent,
+        builder: (context, state) => const CreateEventScreen(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: createVote,
+        builder: (context, state) => const CreateVoteScreen(),
       ),
 
       // Bottom Navigation Stateful Shell Routes

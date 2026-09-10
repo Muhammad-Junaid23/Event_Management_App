@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../app/constants/app_colors.dart';
 import '../../../app/constants/app_assets.dart';
 import '../../../core/widgets/event_card.dart';
-import '../../home/presentation/widgets/filter_bottom_sheet.dart';
 
 class FeaturesScreen extends StatefulWidget {
   const FeaturesScreen({super.key});
@@ -15,7 +14,6 @@ class FeaturesScreen extends StatefulWidget {
 }
 
 class _FeaturesScreenState extends State<FeaturesScreen> {
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

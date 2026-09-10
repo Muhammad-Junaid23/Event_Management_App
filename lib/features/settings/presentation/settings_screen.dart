@@ -1,10 +1,9 @@
 import 'package:event_management_system/app/config/routes.dart';
-import 'package:event_management_system/features/settings/presentation/notification_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/constants/app_colors.dart';
-import '../../../app/constants/app_assets.dart';
+import 'package:event_management_system/app/constants/app_colors.dart';
+import 'package:event_management_system/app/constants/app_assets.dart';
 
 class SettingsScreen extends StatelessWidget {
   final String userName;

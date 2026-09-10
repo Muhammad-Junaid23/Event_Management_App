@@ -4,7 +4,7 @@ import 'package:event_management_system/features/event_details/presentation/crea
 import 'package:event_management_system/features/event_details/presentation/event_details_screen.dart';
 import 'package:event_management_system/features/favorites/presentation/favourite_screen.dart';
 import 'package:event_management_system/features/features_tab/presentation/features_screen.dart';
-import 'package:event_management_system/features/group_profile/presentation/group_profile_screen.dart';
+import 'package:event_management_system/features/community/presentation/group_profile_screen.dart';
 import 'package:event_management_system/features/settings/presentation/edit_profile_screen.dart';
 import 'package:event_management_system/features/settings/presentation/notification_screen.dart';
 import 'package:event_management_system/features/settings/presentation/settings_screen.dart';

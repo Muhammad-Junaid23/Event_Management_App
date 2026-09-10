@@ -1,7 +1,7 @@
 import 'package:event_management_system/app/constants/app_assets.dart';
 import 'package:flutter/material.dart';
 
-import '../../app/constants/app_colors.dart';
+import 'package:event_management_system/app/constants/app_colors.dart';
 
 class EventCard extends StatelessWidget {
   final Widget? topWidget;

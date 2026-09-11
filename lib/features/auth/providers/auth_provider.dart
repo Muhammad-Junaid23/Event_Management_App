@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/services/auth_api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:event_management_system/core/services/storage_service.dart';
@@ -47,6 +48,18 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> logout() async {
     await _storageService.clearAuth();
     state = AuthState(isFirstTime: state.isFirstTime, isLoggedIn: false);
+  }
+
+  // Add this method inside your AuthNotifier class:
+  Future<void> loginWithCredentials({
+    required String email,
+    required String password,
+  }) async {
+    final apiService = ref.read(authApiServiceProvider);
+    final token = await apiService.login(email: email, password: password);
+
+    // Save token locally and update state
+    await login(token);
   }
 }
 

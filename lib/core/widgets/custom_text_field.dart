@@ -8,6 +8,7 @@ class CustomTextField extends StatelessWidget {
   final bool obscureText;
   final VoidCallback? onToggleVisibility;
   final TextEditingController? controller;
+  final String? Function(String?)? validator;
 
   const CustomTextField({
     super.key,
@@ -17,12 +18,14 @@ class CustomTextField extends StatelessWidget {
     this.obscureText = false,
     this.onToggleVisibility,
     this.controller,
+    this.validator,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -35,9 +38,11 @@ class CustomTextField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
+        // Changed TextField to TextFormField to enable form validation support
+        TextFormField(
           controller: controller,
           obscureText: isPassword && obscureText,
+          validator: validator,
           style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hintText,
@@ -59,6 +64,14 @@ class CustomTextField extends StatelessWidget {
                 color: AppColors.primary,
                 width: 1.0,
               ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 0.8),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
             ),
             suffixIcon: isPassword
                 ? IconButton(

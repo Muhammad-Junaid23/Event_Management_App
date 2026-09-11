@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/features/auth/providers/auth_provider.dart';
 
 class OnboardingItem {
   final String imagePath;
@@ -15,14 +17,14 @@ class OnboardingItem {
   });
 }
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
@@ -44,6 +46,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
+  Future<void> _completeOnboarding() async {
+    // Persist first time state so Splash screen redirects to Login on next app start
+    await ref.read(authProvider.notifier).completeOnboarding();
+    if (mounted) {
+      context.go('/login');
+    }
+  }
+
   void _onNext() {
     if (_currentIndex < _items.length - 1) {
       _pageController.nextPage(
@@ -51,8 +61,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      context.go('/login');
+      _completeOnboarding();
     }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -76,7 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.centerRight,
                 child: _currentIndex < _items.length - 1
                     ? TextButton(
-                        onPressed: () => context.go('/login'),
+                        onPressed: _completeOnboarding,
                         child: const Text(
                           'Skip',
                           style: TextStyle(
@@ -107,9 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           SizedBox(
-                            height:
-                                MediaQuery.of(context).size.height *
-                                0.35, // Caps all images to 35% screen height
+                            height: MediaQuery.of(context).size.height * 0.35,
                             child: Image.asset(
                               item.imagePath,
                               fit: BoxFit.contain,
@@ -121,8 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 24,
-                              fontWeight: FontWeight
-                                  .w900, // Extra bold weight matching Figma
+                              fontWeight: FontWeight.w900,
                               color: theme.colorScheme.onSurface,
                               height: 1.25,
                               letterSpacing: -0.5,

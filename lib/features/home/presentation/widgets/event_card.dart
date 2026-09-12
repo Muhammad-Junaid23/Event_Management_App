@@ -1,18 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
-import '../../../../app/constants/app_assets.dart';
+import '../../models/event_model.dart';
+import '../../providers/event_provider.dart';
 import '../../../../app/constants/app_colors.dart';
 
-class EventCard extends StatelessWidget {
-  const EventCard({super.key});
+class EventCard extends ConsumerWidget {
+  final EventModel event;
+
+  const EventCard({super.key, required this.event});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final formattedDate = DateFormat('EEE, d MMM yyyy, h:mm a')
+        .format(event.dateTime);
 
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          // width: 1.5,
+          color: theme.brightness == Brightness.dark
+              ? AppColors.darkBorderInput
+              : AppColors.borderFilterIcon,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -23,10 +39,10 @@ class EventCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    width: 40,
-                    height: 40,
+                    width: 44,
+                    height: 44,
                     color: Colors.grey.shade300,
-                    child: Image.asset(AppAssets.user1, fit: BoxFit.cover),
+                    child: Image.asset(event.imageUrl, fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -35,16 +51,17 @@ class EventCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Tech Meetup',
+                        event.title,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface,
                         ),
                       ),
-                      const Text(
-                        'Wed, 5 Nov 2025, 2:00PM - 3:00PM',
-                        style: TextStyle(
+                      const SizedBox(height: 2),
+                      Text(
+                        formattedDate,
+                        style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.textCardSubtitle,
                         ),
@@ -53,11 +70,15 @@ class EventCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
-                    Icons.favorite_border,
-                    color: AppColors.textCardSubtitle,
+                  icon: Icon(
+                    event.isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: event.isFavorite
+                        ? Colors.red
+                        : AppColors.textCardSubtitle,
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    ref.read(eventProvider.notifier).toggleFavorite(event.id);
+                  },
                 ),
               ],
             ),
@@ -72,7 +93,7 @@ class EventCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    '2464 Royal Ln. Mesa, New Jersey 45463',
+                    event.location,
                     style: TextStyle(
                       fontSize: 12,
                       color: theme.textTheme.bodyMedium?.color,

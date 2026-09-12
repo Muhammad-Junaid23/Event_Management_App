@@ -1,41 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../../app/constants/app_colors.dart';
+import '../../models/event_model.dart';
+import '../../providers/event_provider.dart';
 import 'event_card.dart';
 
-class CalendarViewWidget extends StatefulWidget {
+class CalendarViewWidget extends ConsumerStatefulWidget {
   const CalendarViewWidget({super.key});
 
   @override
-  State<CalendarViewWidget> createState() => _CalendarViewWidgetState();
+  ConsumerState<CalendarViewWidget> createState() => _CalendarViewWidgetState();
 }
 
-class _CalendarViewWidgetState extends State<CalendarViewWidget> {
+class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
   DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay = DateTime.now();
-
-  // Dynamic event filtering
-  List<Color> _getDotsForDay(DateTime day) {
-    // Replace with Provider or REST API event mapping logic
-    List<Color> dots = [];
-    if (day.day % 3 == 0) dots.add(Colors.teal);
-    if (day.day % 5 == 0) dots.add(Colors.red);
-    if (day.day % 2 == 0 && day.day < 20) dots.add(Colors.blue);
-    return dots;
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // 1. Read state & events directly from Riverpod
+    final eventState = ref.watch(eventProvider);
+    final eventsForSelectedDay = ref.watch(selectedDateEventsProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          // Header Controls
+          // Header Controls (Month & Year display with Chevrons)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Row(
@@ -44,6 +40,7 @@ class _CalendarViewWidgetState extends State<CalendarViewWidget> {
                 _buildChevronButton(
                   icon: Icons.chevron_left,
                   isDark: isDark,
+                  theme: theme,
                   onTap: () {
                     setState(() {
                       _focusedDay = DateTime(
@@ -75,6 +72,7 @@ class _CalendarViewWidgetState extends State<CalendarViewWidget> {
                 _buildChevronButton(
                   icon: Icons.chevron_right,
                   isDark: isDark,
+                  theme: theme,
                   onTap: () {
                     setState(() {
                       _focusedDay = DateTime(
@@ -89,24 +87,33 @@ class _CalendarViewWidgetState extends State<CalendarViewWidget> {
           ),
           const SizedBox(height: 8),
 
-          // Calendar Grid
-          TableCalendar<Color>(
+          // Table Calendar
+          TableCalendar<EventModel>(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: _focusedDay,
             startingDayOfWeek: StartingDayOfWeek.monday,
             headerVisible: false,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            eventLoader: _getDotsForDay,
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
+
+            // Sync selected date with Riverpod
+            selectedDayPredicate: (day) =>
+                isSameDay(eventState.selectedDate, day),
+
+            // Fetch actual events from Riverpod state per day
+            eventLoader: (day) {
+              return ref.read(eventProvider).getEventsForDay(day);
             },
+
+            // Handle day tap: update Riverpod state
+            onDaySelected: (selectedDay, focusedDay) {
+              ref.read(eventProvider.notifier).setSelectedDate(selectedDay);
+              setState(() => _focusedDay = focusedDay);
+            },
+
             onPageChanged: (focusedDay) {
               setState(() => _focusedDay = focusedDay);
             },
+
             daysOfWeekStyle: const DaysOfWeekStyle(
               weekdayStyle: TextStyle(
                 fontSize: 13,
@@ -119,6 +126,7 @@ class _CalendarViewWidgetState extends State<CalendarViewWidget> {
                 color: AppColors.textCardSubtitle,
               ),
             ),
+
             calendarStyle: CalendarStyle(
               outsideDaysVisible: true,
               outsideTextStyle: TextStyle(
@@ -142,33 +150,37 @@ class _CalendarViewWidgetState extends State<CalendarViewWidget> {
                 shape: BoxShape.circle,
               ),
             ),
+
+            // Custom ring markers matching your design styling
             calendarBuilders: CalendarBuilders(
-              markerBuilder: (context, day, events) {
-                if (events.isEmpty) return const SizedBox();
+              markerBuilder: (context, day, dayEvents) {
+                if (dayEvents.isEmpty) return const SizedBox();
                 return Positioned(
                   bottom: 4,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: events.map((color) {
-                      return Container(
+                    children: List.generate(
+                      dayEvents.length > 3 ? 3 : dayEvents.length,
+                      (index) => Container(
                         margin: const EdgeInsets.symmetric(horizontal: 1.5),
                         width: 5,
                         height: 5,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.transparent, // Hollow background
+                          color: Colors.transparent,
                           border: Border.all(
-                            color: color, // Outlined color
-                            width: 1.2, // Thickness of the outline
+                            color: AppColors.primary,
+                            width: 1.2,
                           ),
                         ),
-                      );
-                    }).toList(),
+                      ),
+                    ),
                   ),
                 );
               },
             ),
           ),
+
           const SizedBox(height: 12),
           Divider(
             color: isDark ? AppColors.darkBorderInput : AppColors.borderDivider,
@@ -176,9 +188,36 @@ class _CalendarViewWidgetState extends State<CalendarViewWidget> {
           ),
           const SizedBox(height: 16),
 
-          const EventCard(),
-          const SizedBox(height: 12),
-          const EventCard(),
+          // Events list for selected day / Empty state handling
+          if (eventsForSelectedDay.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32.0),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.event_busy,
+                    size: 48,
+                    color: AppColors.textCardSubtitle,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'No events found for this date',
+                    style: TextStyle(
+                      color: AppColors.textCardSubtitle,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...eventsForSelectedDay.map(
+              (event) => Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: EventCard(event: event),
+              ),
+            ),
+
           const SizedBox(height: 20),
         ],
       ),
@@ -188,6 +227,7 @@ class _CalendarViewWidgetState extends State<CalendarViewWidget> {
   Widget _buildChevronButton({
     required IconData icon,
     required bool isDark,
+    required ThemeData theme,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -198,14 +238,12 @@ class _CalendarViewWidgetState extends State<CalendarViewWidget> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isDark ? AppColors.darkBorderInput : Colors.grey.shade300,
+            color: isDark
+                ? AppColors.darkBorderInput
+                : AppColors.borderFilterIcon,
           ),
         ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: isDark ? Colors.white : Colors.black87,
-        ),
+        child: Icon(icon, size: 18, color: theme.colorScheme.onSurface),
       ),
     );
   }

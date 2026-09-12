@@ -68,6 +68,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(authProvider.notifier).loginWithGoogle();
+      if (mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -134,7 +153,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             CustomTextField(
                               controller: _emailController,
                               label: 'Email',
-                              hintText: 'Example23@gmail.com',
+                              hintText: 'admin@gmail.com',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Email is required';
@@ -205,9 +224,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            GoogleAuthButton(
-                              onPressed: () => context.go('/home'),
-                            ),
+                            GoogleAuthButton(onPressed: _handleGoogleLogin),
                             const SizedBox(height: 34),
                             const Spacer(),
                             Center(

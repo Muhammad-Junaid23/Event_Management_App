@@ -1,23 +1,23 @@
-import 'package:event_management_system/features/home/presentation/widgets/calendar_view_widget.dart';
-import 'package:event_management_system/features/home/presentation/widgets/event_card.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/features/home/presentation/widgets/calendar_view_widget.dart';
+import 'package:event_management_system/features/home/presentation/widgets/event_card.dart';
 
 import 'widgets/filter_bottom_sheet.dart';
+import '../providers/event_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedView = 0; // 0: Calendar View, 1: List View
 
-  // Filter Dialog (Fix 11: Covers root navigator to block bottom navigation interactions)
   void _openFilterDialog() {
     showDialog(
       context: context,
@@ -60,7 +60,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
-                    // Outlined Filter Icon (Fix 3)
                     Container(
                       width: 40,
                       height: 40,
@@ -112,15 +111,33 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _selectedView == 0
                     ? const CalendarViewWidget()
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        itemCount: 6,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, index) => const EventCard(),
+                    : Builder(
+                        builder: (context) {
+                          final events = ref.watch(filteredEventsProvider);
+
+                          if (events.isEmpty) {
+                            return Center(
+                              child: Text(
+                                'No matching events found',
+                                style: TextStyle(
+                                  color: AppColors.textCardSubtitle,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return ListView.separated(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
+                            itemCount: events.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) =>
+                                EventCard(event: events[index]),
+                          );
+                        },
                       ),
               ),
             ],
@@ -155,5 +172,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
- }
+}

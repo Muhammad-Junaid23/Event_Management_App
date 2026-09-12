@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:event_management_system/app/constants/app_colors.dart';
+import '../../providers/event_provider.dart';
+import '../../../../app/constants/app_colors.dart';
 
-class FilterBottomSheet extends StatefulWidget {
+class FilterBottomSheet extends ConsumerStatefulWidget {
   const FilterBottomSheet({super.key});
 
   @override
-  State<FilterBottomSheet> createState() => _FilterBottomSheetState();
+  ConsumerState<FilterBottomSheet> createState() => _FilterBottomSheetState();
 }
 
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
+class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
   String? selectedCity;
   String? selectedState;
   String? selectedGroup;
-  String selectedCategory = 'Business';
+  String? selectedCategory;
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Religious', 'icon': Icons.nightlight_round},
@@ -22,6 +24,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     {'name': 'Education', 'icon': Icons.school},
     {'name': 'Community', 'icon': Icons.groups},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final currentState = ref.read(eventProvider);
+    selectedCity = currentState.selectedCity;
+    selectedState = currentState.selectedState;
+    selectedGroup = currentState.selectedGroup;
+    selectedCategory = currentState.selectedCategory;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +51,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -66,50 +77,63 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // City Dropdown
               _buildDropdownLabel('City', theme),
               _buildDropdown(
                 hint: 'Select City',
                 value: selectedCity,
-                items: ['New York', 'Mesa', 'Los Angeles'],
+                items: [
+                  'New York',
+                  'Mesa',
+                  'Los Angeles',
+                  'San Francisco',
+                  'Austin',
+                ],
                 onChanged: (val) => setState(() => selectedCity = val),
                 theme: theme,
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
 
-              // State Dropdown
               _buildDropdownLabel('State', theme),
               _buildDropdown(
                 hint: 'Select State',
                 value: selectedState,
-                items: ['New Jersey', 'California', 'Texas'],
+                items: ['New Jersey', 'New York', 'California'],
                 onChanged: (val) => setState(() => selectedState = val),
                 theme: theme,
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
 
-              // Groups Dropdown
               _buildDropdownLabel('Groups', theme),
               _buildDropdown(
                 hint: 'Group',
                 value: selectedGroup,
-                items: ['Group A', 'Group B', 'Tech Group'],
+                items: [
+                  'Group A',
+                  'Group B',
+                  'Tech Group',
+                  'Dev Community',
+                  'Business Leaders',
+                  'Local Tech',
+                ],
                 onChanged: (val) => setState(() => selectedGroup = val),
                 theme: theme,
                 isDark: isDark,
               ),
               const SizedBox(height: 20),
 
-              // Category Filter Tags
               Wrap(
                 spacing: 8,
                 runSpacing: 10,
                 children: categories.map((cat) {
                   final isSelected = selectedCategory == cat['name'];
                   return InkWell(
-                    onTap: () => setState(() => selectedCategory = cat['name']),
+                    onTap: () {
+                      setState(() {
+                        selectedCategory = isSelected ? null : cat['name'];
+                      });
+                    },
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -158,19 +182,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ),
               const SizedBox(height: 24),
 
-              // Increased Height Action Buttons (Fix 2)
               Row(
                 children: [
                   Expanded(
                     child: SizedBox(
-                      height: 52, // Tall button height matching Figma
+                      height: 52,
                       child: OutlinedButton(
                         onPressed: () {
-                          setState(() {
-                            selectedCity = null;
-                            selectedState = null;
-                            selectedGroup = null;
-                          });
+                          ref.read(eventProvider.notifier).clearFilters();
+                          Navigator.pop(context);
                         },
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
@@ -196,9 +216,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: SizedBox(
-                      height: 52, // Tall button height matching Figma
+                      height: 52,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          ref
+                              .read(eventProvider.notifier)
+                              .applyFilters(
+                                city: selectedCity,
+                                state: selectedState,
+                                group: selectedGroup,
+                                category: selectedCategory,
+                              );
+                          Navigator.pop(context);
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           elevation: 0,
@@ -240,7 +270,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  // Fixed Dropdown clipping overlay issue (Fix 1)
   Widget _buildDropdown({
     required String hint,
     required String? value,
@@ -264,13 +293,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           value: value,
           hint: Text(
             hint,
-            style: TextStyle(
-              color: theme.textTheme.bodyMedium?.color,
+            style: const TextStyle(
+              color: AppColors.textCardSubtitle,
               fontSize: 14,
             ),
           ),
           isExpanded: true,
-          // Disables the default grey rectangular focus overlay completely
           focusColor: Colors.transparent,
           dropdownColor: isDark ? AppColors.darkSurface : AppColors.background,
           icon: Icon(
@@ -280,11 +308,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           items: items.map((e) {
             return DropdownMenuItem<String>(
               value: e,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  e,
-                  style: TextStyle(color: theme.colorScheme.onSurface),
+              child: Text(
+                e,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontSize: 14,
                 ),
               ),
             );

@@ -50,7 +50,7 @@ class AppRoutes {
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(path: login, builder: (context, state) => const LoginScreen()),
-      GoRoute(path: signup, builder: (context, state) => const SignupScreen()),
+      GoRoute(path: signup, builder: (context, state) => const SignUpScreen()),
 
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

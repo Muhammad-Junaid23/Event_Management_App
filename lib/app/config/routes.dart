@@ -73,6 +73,7 @@ class AppRoutes {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return EventDetailsScreen(
+            eventId: extra?['eventId'] ?? '',
             title:
                 extra?['title'] ??
                 'Made in Melanin! Black History Month Social.....',

@@ -1,9 +1,11 @@
+import 'package:event_management_system/features/home/providers/event_provider.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
 
-class EventDetailsScreen extends StatelessWidget {
+class EventDetailsScreen extends ConsumerWidget {
+  final String eventId;
   final String title;
   final String dateText;
   final String locationText;
@@ -12,6 +14,7 @@ class EventDetailsScreen extends StatelessWidget {
 
   const EventDetailsScreen({
     super.key,
+    required this.eventId,
     this.title = 'Made in Melanin! Black History Month Social.....',
     this.dateText = '28 October 2025 6:00pm GMT',
     this.locationText = '1901 Thornridge Cir. Shiloh, Hawaii 81063',
@@ -20,10 +23,19 @@ class EventDetailsScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
+
+    // Watch master provider to locate current event and listen to live changes
+    final eventState = ref.watch(eventProvider);
+    final eventIndex = eventState.allEvents.indexWhere((e) => e.id == eventId);
+
+    // Check live favorite state (fallback to false if not found)
+    final bool isFavorite = eventIndex != -1
+        ? eventState.allEvents[eventIndex].isFavorite
+        : false;
 
     // Fallback in case passed description is empty or whitespace
     final String displayText = (description.trim().isNotEmpty)
@@ -69,11 +81,17 @@ class EventDetailsScreen extends StatelessWidget {
                                 onPressed: () => Navigator.pop(context),
                               ),
                               IconButton(
-                                icon: const Icon(
-                                  Icons.favorite_border,
-                                  color: Colors.white,
+                                icon: Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFavorite ? Colors.red : Colors.white,
                                 ),
-                                onPressed: () {},
+                                onPressed: () {
+                                  ref
+                                      .read(eventProvider.notifier)
+                                      .toggleFavorite(eventId);
+                                },
                               ),
                             ],
                           ),

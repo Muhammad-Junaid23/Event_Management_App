@@ -65,16 +65,13 @@ class EventCard extends StatelessWidget {
                 Positioned(
                   top: 10,
                   right: 10,
-                  child: GestureDetector(
-                    onTap: onFavoriteTap,
-                    child: IconButton(
-                      icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        size: 18,
-                        color: isFavorite ? Colors.red : Colors.white,
-                      ),
-                      onPressed: () {},
+                  child: IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      size: 18,
+                      color: isFavorite ? Colors.red : Colors.white,
                     ),
+                    onPressed: onFavoriteTap,
                   ),
                 ),
               ],
@@ -144,7 +141,7 @@ class EventCard extends StatelessWidget {
           ],
 
           // Action Button
-          if (actionButton != null) actionButton!,
+          ...?actionButton == null ? null : [actionButton!],
         ],
       ),
     );

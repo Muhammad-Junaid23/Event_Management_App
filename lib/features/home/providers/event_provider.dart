@@ -170,8 +170,15 @@ class EventNotifier extends StateNotifier<EventState> {
 // 3. PROVIDERS
 // ---------------------------------------------------------------------------
 
-/// Main Event State Provider
+// Main master state provider for all events
 final eventProvider = StateNotifierProvider<EventNotifier, EventState>((ref) {
+  return EventNotifier();
+});
+
+// Dedicated features state provider
+final featuresEventProvider = StateNotifierProvider<EventNotifier, EventState>((
+  ref,
+) {
   return EventNotifier();
 });
 
@@ -184,4 +191,10 @@ final filteredEventsProvider = Provider<List<EventModel>>((ref) {
 final selectedDateEventsProvider = Provider<List<EventModel>>((ref) {
   final state = ref.watch(eventProvider);
   return state.getEventsForDay(state.selectedDate);
+});
+
+/// Shared Favorites List across Home, Features, Community, and Favorites tab
+final favoriteEventsProvider = Provider<List<EventModel>>((ref) {
+  final state = ref.watch(eventProvider);
+  return state.allEvents.where((e) => e.isFavorite).toList();
 });

@@ -5,7 +5,9 @@ import '../../providers/event_provider.dart';
 import '../../../../app/constants/app_colors.dart';
 
 class FilterBottomSheet extends ConsumerStatefulWidget {
-  const FilterBottomSheet({super.key});
+  final StateNotifierProvider<EventNotifier, EventState>? provider;
+
+  const FilterBottomSheet({super.key, this.provider});
 
   @override
   ConsumerState<FilterBottomSheet> createState() => _FilterBottomSheetState();
@@ -16,6 +18,9 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
   String? selectedState;
   String? selectedGroup;
   String? selectedCategory;
+
+  StateNotifierProvider<EventNotifier, EventState> get _targetProvider =>
+      widget.provider ?? eventProvider;
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Religious', 'icon': Icons.nightlight_round},
@@ -28,7 +33,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
   @override
   void initState() {
     super.initState();
-    final currentState = ref.read(eventProvider);
+    final currentState = ref.read(_targetProvider);
     selectedCity = currentState.selectedCity;
     selectedState = currentState.selectedState;
     selectedGroup = currentState.selectedGroup;
@@ -189,7 +194,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
                       height: 52,
                       child: OutlinedButton(
                         onPressed: () {
-                          ref.read(eventProvider.notifier).clearFilters();
+                          ref.read(_targetProvider.notifier).clearFilters();
                           Navigator.pop(context);
                         },
                         style: OutlinedButton.styleFrom(
@@ -220,7 +225,7 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
                       child: ElevatedButton(
                         onPressed: () {
                           ref
-                              .read(eventProvider.notifier)
+                              .read(_targetProvider.notifier)
                               .applyFilters(
                                 city: selectedCity,
                                 state: selectedState,

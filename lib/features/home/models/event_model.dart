@@ -52,4 +52,37 @@ class EventModel {
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
+
+  //Adding JSON serialization methods
+  factory EventModel.fromJson(Map<String, dynamic> json) {
+    return EventModel(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      dateTime: DateTime.parse(json['dateTime'] as String),
+      location: json['location'] as String,
+      city: json['city'] as String,
+      state: json['state'] as String,
+      category: json['category'] as String,
+      group: json['group'] as String,
+      imageUrl: json['imageUrl'] as String,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'dateTime': dateTime.toIso8601String(),
+      'location': location,
+      'city': city,
+      'state': state,
+      'category': category,
+      'group': group,
+      'imageUrl': imageUrl,
+      'isFavorite': isFavorite,
+    };
+  }
 }

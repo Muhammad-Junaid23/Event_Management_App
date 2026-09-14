@@ -65,7 +65,7 @@ class AppRoutes {
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: groupProfile,
-        builder: (context, state) => const GroupProfileScreen(),
+        builder: (context, state) => GroupProfileScreen(),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

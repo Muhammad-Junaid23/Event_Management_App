@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 
 class CreateEventScreen extends StatefulWidget {
@@ -10,6 +12,8 @@ class CreateEventScreen extends StatefulWidget {
 }
 
 class _CreateEventScreenState extends State<CreateEventScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
@@ -18,6 +22,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  XFile? _selectedImage;
+
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
@@ -29,7 +36,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     super.dispose();
   }
 
-  // Pick Date Dialog
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _selectedImage = image);
+    }
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -46,7 +59,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
-  // Pick Time Dialog
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -57,6 +69,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         _selectedTime = picked;
         _timeController.text = picked.format(context);
       });
+    }
+  }
+
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      // Logic to emit event state or call API provider
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Event Created Successfully')),
+      );
+      Navigator.of(context).pop();
     }
   }
 
@@ -72,97 +94,110 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildLabel('Title'),
-            _buildTextField(
-              controller: _titleController,
-              hint: 'Made in Melanin! Black History Month Social',
-            ),
-            const SizedBox(height: 16),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildLabel('Title'),
+              _buildTextField(
+                controller: _titleController,
+                hint: 'Made in Melanin! Black History Month Social',
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Title is required'
+                    : null,
+              ),
+              const SizedBox(height: 16),
 
-            Row(
-              children: [
-                // Date Picker Field
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel('Date'),
-                      _buildTextField(
-                        controller: _dateController,
-                        hint: '24/02/2024',
-                        suffixIcon: Icons.calendar_today,
-                        readOnly: true,
-                        onTap: () => _selectDate(context),
-                      ),
-                    ],
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel('Date'),
+                        _buildTextField(
+                          controller: _dateController,
+                          hint: '24/02/2024',
+                          suffixIcon: Icons.calendar_today,
+                          readOnly: true,
+                          onTap: () => _selectDate(context),
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Select date'
+                              : null,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-
-                // Time Picker Field
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel('Time'),
-                      _buildTextField(
-                        controller: _timeController,
-                        hint: '12:00 PM',
-                        suffixIcon: Icons.access_time,
-                        readOnly: true,
-                        onTap: () => _selectTime(context),
-                      ),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel('Time'),
+                        _buildTextField(
+                          controller: _timeController,
+                          hint: '12:00 PM',
+                          suffixIcon: Icons.access_time,
+                          readOnly: true,
+                          onTap: () => _selectTime(context),
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Select time'
+                              : null,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-            _buildLabel('Location'),
-            _buildTextField(
-              controller: _locationController,
-              hint: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
-            ),
-            const SizedBox(height: 16),
+              _buildLabel('Location'),
+              _buildTextField(
+                controller: _locationController,
+                hint: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Location is required'
+                    : null,
+              ),
+              const SizedBox(height: 16),
 
-            _buildLabel('Event Detail'),
-            _buildTextField(
-              controller: _detailController,
-              hint: 'Lorem ipsum dolor sit amet consectetur...',
-              maxLines: 5,
-            ),
-            const SizedBox(height: 16),
+              _buildLabel('Event Detail'),
+              _buildTextField(
+                controller: _detailController,
+                hint: 'Event description details...',
+                maxLines: 5,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Detail is required'
+                    : null,
+              ),
+              const SizedBox(height: 16),
 
-            _buildLabel('Upload Image'),
-            _buildImagePickerBox(),
-            const SizedBox(height: 30),
+              _buildLabel('Upload Image'),
+              _buildImagePickerBox(),
+              const SizedBox(height: 30),
 
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Save or submit event logic
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _submitForm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Create Event',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  child: const Text(
+                    'Create Event',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -183,14 +218,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     IconData? suffixIcon,
     bool readOnly = false,
     VoidCallback? onTap,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       readOnly: readOnly,
       onTap: onTap,
       maxLines: maxLines,
-      decoration: // Text Field Decoration
-      InputDecoration(
+      validator: validator,
+      decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.textVote, fontSize: 13),
         suffixIcon: suffixIcon != null
@@ -212,23 +248,34 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Widget _buildImagePickerBox() {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.borderTechCard),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.upload_outlined, color: AppColors.textSubtle),
-          SizedBox(height: 4),
-          Text(
-            'Upload',
-            style: TextStyle(color: AppColors.textSubtle, fontSize: 12),
-          ),
-        ],
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.borderTechCard),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: _selectedImage != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(_selectedImage!.path),
+                  fit: BoxFit.cover,
+                ),
+              )
+            : const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.upload_outlined, color: AppColors.textSubtle),
+                  SizedBox(height: 4),
+                  Text(
+                    'Upload',
+                    style: TextStyle(color: AppColors.textSubtle, fontSize: 12),
+                  ),
+                ],
+              ),
       ),
     );
   }

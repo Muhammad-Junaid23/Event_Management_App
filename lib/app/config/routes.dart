@@ -72,18 +72,8 @@ class AppRoutes {
         path: eventDetails,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return EventDetailsScreen(
-            eventId: extra?['eventId'] ?? '',
-            title:
-                extra?['title'] ??
-                'Made in Melanin! Black History Month Social.....',
-            dateText: extra?['dateText'] ?? '28 October 2025 6:00pm GMT',
-            locationText:
-                extra?['locationText'] ??
-                '1901 Thornridge Cir. Shiloh, Hawaii 81063',
-            description: extra?['description'] ?? 'Lorem ipsum dolor sit amet consectetur. Sed volutpat euismod enim accumsan quam posuere. Tortor pretium lorem dui metus amet in sed. Sodales volutpat maecenas et quisque nibh ultrices in nulla. Enim fames quam turpis pellentesque vivamus massa.',
-            imagePath: extra?['imagePath'] ?? '',
-          );
+          final eventId = extra?['eventId'] as String? ?? '';
+          return EventDetailsScreen(eventId: eventId);
         },
       ),
       GoRoute(

@@ -3,24 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:intl/intl.dart';
 
 class EventDetailsScreen extends ConsumerWidget {
   final String eventId;
-  final String title;
-  final String dateText;
-  final String locationText;
-  final String description;
-  final String imagePath;
 
-  const EventDetailsScreen({
-    super.key,
-    required this.eventId,
-    this.title = 'Made in Melanin! Black History Month Social.....',
-    this.dateText = '28 October 2025 6:00pm GMT',
-    this.locationText = '1901 Thornridge Cir. Shiloh, Hawaii 81063',
-    this.description = 'Lorem ipsum dolor sit amet consectetur. Sed volutpat euismod enim accumsan quam posuere. Tortor pretium lorem dui metus amet in sed. Sodales volutpat maecenas et quisque nibh ultrices in nulla. Enim fames quam turpis pellentesque vivamus massa.Lorem ipsum dolor sit amet consectetur. Sed volutpat euismod enim accumsan quam posuere. Tortor pretium lorem dui metus amet in sed. Sodales volutpat maecenas et quisque nibh ultrices in nulla.Lorem ipsum dolor sit amet consectetur. Sed volutpat euismod enim accumsan',
-    this.imagePath = AppAssets.featuresCard,
-  });
+  const EventDetailsScreen({super.key, required this.eventId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,19 +16,21 @@ class EventDetailsScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Watch master provider to locate current event and listen to live changes
+    // Fetch the live model directly from provider state using eventId
     final eventState = ref.watch(eventProvider);
     final eventIndex = eventState.allEvents.indexWhere((e) => e.id == eventId);
 
-    // Check live favorite state (fallback to false if not found)
-    final bool isFavorite = eventIndex != -1
-        ? eventState.allEvents[eventIndex].isFavorite
-        : false;
+    // Guard if event isn't found
+    if (eventIndex == -1) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('Event not found')),
+      );
+    }
 
-    // Fallback in case passed description is empty or whitespace
-    final String displayText = (description.trim().isNotEmpty)
-        ? description
-        : 'Lorem ipsum dolor sit amet consectetur. Sed volutpat euismod enim accumsan quam posuere. Tortor pretium lorem dui metus amet in sed. Sodales volutpat maecenas et quisque nibh ultrices in nulla. Enim fames quam turpis pellentesque vivamus massa.';
+    final event = eventState.allEvents[eventIndex];
+    final formattedDate = DateFormat('EEE, d MMM yyyy, h:mm a')
+        .format(event.dateTime);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -55,13 +45,20 @@ class EventDetailsScreen extends ConsumerWidget {
                   Stack(
                     children: [
                       SizedBox(
-                        height: screenHeight * 0.40,
+                        height: screenHeight * 0.35,
                         width: double.infinity,
                         child: Image.asset(
-                          imagePath.isNotEmpty
-                              ? imagePath
+                          (event.imageUrl.isNotEmpty)
+                              ? event.imageUrl
                               : AppAssets.featuresCard,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.cover, // Ensures uniform crop across all image aspect ratios
+                          errorBuilder: (context, error, stackTrace) {
+                            // Fallback if asset path is invalid
+                            return Image.asset(
+                              AppAssets.featuresCard,
+                              fit: BoxFit.cover,
+                            );
+                          },
                         ),
                       ),
                       SafeArea(
@@ -82,15 +79,17 @@ class EventDetailsScreen extends ConsumerWidget {
                               ),
                               IconButton(
                                 icon: Icon(
-                                  isFavorite
+                                  event.isFavorite
                                       ? Icons.favorite
                                       : Icons.favorite_border,
-                                  color: isFavorite ? Colors.red : Colors.white,
+                                  color: event.isFavorite
+                                      ? Colors.red
+                                      : Colors.white,
                                 ),
                                 onPressed: () {
                                   ref
                                       .read(eventProvider.notifier)
-                                      .toggleFavorite(eventId);
+                                      .toggleFavorite(event.id);
                                 },
                               ),
                             ],
@@ -114,7 +113,7 @@ class EventDetailsScreen extends ConsumerWidget {
                         children: [
                           // Title
                           Text(
-                            title,
+                            event.title,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -133,7 +132,7 @@ class EventDetailsScreen extends ConsumerWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                dateText,
+                                formattedDate,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isDark
@@ -156,7 +155,7 @@ class EventDetailsScreen extends ConsumerWidget {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  locationText,
+                                  '${event.location}, ${event.city}',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: isDark
@@ -180,7 +179,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 10),
 
-                          // Description Container with Forced Visible Text Style
+                          // Description Container
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(14),
@@ -191,7 +190,9 @@ class EventDetailsScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              displayText,
+                              event.description.isNotEmpty
+                                  ? event.description
+                                  : 'No description provided.',
                               style: TextStyle(
                                 fontSize: 12,
                                 height: 1.5,

@@ -18,8 +18,10 @@ class FeaturesScreen extends ConsumerStatefulWidget {
 
 class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
   void _openFilterDialog() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => FilterBottomSheet(provider: eventProvider),
     );
   }
@@ -29,8 +31,8 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // Listens exclusively to the features provider
-    final eventState = ref.watch(eventProvider);
+    // Listens specifically to the filtered events list derived from master state
+    final filteredEvents = ref.watch(filteredEventsProvider);
 
     return Scaffold(
       body: Container(
@@ -88,7 +90,7 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
 
               // Feature Cards Feed
               Expanded(
-                child: eventState.filteredEvents.isEmpty
+                child: filteredEvents.isEmpty
                     ? Center(
                         child: Text(
                           'No matching events found.',
@@ -103,11 +105,11 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
                           horizontal: 20,
                           vertical: 8,
                         ),
-                        itemCount: eventState.filteredEvents.length,
+                        itemCount: filteredEvents.length,
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 16),
                         itemBuilder: (context, index) {
-                          final event = eventState.filteredEvents[index];
+                          final event = filteredEvents[index];
                           final formattedDate = DateFormat(
                             'EEE, d MMM yyyy, h:mm a',
                           ).format(event.dateTime);
@@ -115,24 +117,19 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
                           return EventCard(
                             title: event.title,
                             dateText: formattedDate,
-                            locationText: event.location,
+                            locationText: '${event.location}, ${event.city}',
                             isFavorite: event.isFavorite,
-                            // Toggles favorite in master list across all screens
+                            imagePath: event.imageUrl,
                             onFavoriteTap: () {
                               ref
                                   .read(eventProvider.notifier)
                                   .toggleFavorite(event.id);
                             },
                             onTap: () {
+                              // Pass eventId to allow details screen to watch single source of truth
                               context.push(
                                 AppRoutes.eventDetails,
-                                extra: {
-                                  'eventId': event.id,
-                                  'title': event.title,
-                                  'dateText': formattedDate,
-                                  'locationText': event.location,
-                                  'isFavorite': event.isFavorite,
-                                },
+                                extra: {'eventId': event.id},
                               );
                             },
                             actionButton: SizedBox(

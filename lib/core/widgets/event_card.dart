@@ -8,6 +8,7 @@ class EventCard extends StatelessWidget {
   final String title;
   final String? dateText;
   final String? locationText;
+  final String? imagePath;
   final Widget? actionButton;
   final bool isFavorite;
   final VoidCallback? onFavoriteTap;
@@ -19,6 +20,7 @@ class EventCard extends StatelessWidget {
     required this.title,
     this.dateText,
     this.locationText,
+    this.imagePath,
     this.actionButton,
     this.isFavorite = false,
     this.onFavoriteTap,
@@ -29,6 +31,11 @@ class EventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    // Use passed imagePath if valid, otherwise fallback to featuresCard
+    final activeImagePath = (imagePath != null && imagePath!.isNotEmpty)
+        ? imagePath!
+        : AppAssets.featuresCard;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -56,10 +63,7 @@ class EventCard extends StatelessWidget {
                         height: 220,
                         width: double.infinity,
                         color: Colors.grey.shade300,
-                        child: Image.asset(
-                          AppAssets.featuresCard,
-                          fit: BoxFit.cover,
-                        ),
+                        child: Image.asset(activeImagePath, fit: BoxFit.cover),
                       ),
                 ),
                 Positioned(

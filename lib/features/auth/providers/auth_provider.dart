@@ -1,4 +1,3 @@
-import 'package:event_management_system/core/services/auth_api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:event_management_system/core/services/storage_service.dart';

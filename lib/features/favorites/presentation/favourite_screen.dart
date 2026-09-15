@@ -78,6 +78,7 @@ class FavouriteScreen extends ConsumerWidget {
                             dateText: formattedDate,
                             locationText: event.location,
                             isFavorite: event.isFavorite,
+                            imagePath: event.imageUrl,
                             onFavoriteTap: () {
                               ref
                                   .read(eventProvider.notifier)
@@ -86,14 +87,7 @@ class FavouriteScreen extends ConsumerWidget {
                             onTap: () {
                               context.push(
                                 AppRoutes.eventDetails,
-                                extra: {
-                                  'eventId': event.id,
-                                  'title': event.title,
-                                  'dateText': formattedDate,
-                                  'locationText': event.location,
-                                  'description': event.description,
-                                  'imagePath': event.imageUrl,
-                                },
+                                extra: {'eventId': event.id},
                               );
                             },
                             actionButton: SizedBox(

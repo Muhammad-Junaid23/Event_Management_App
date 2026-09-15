@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:event_management_system/app/config/routes.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
-import 'package:event_management_system/features/community/providers/community_provider.dart';
+import 'package:event_management_system/features/community/providers/community_polls_provider.dart';
 
 class CommunityScreen extends ConsumerWidget {
   final bool isAdmin;
@@ -100,25 +100,36 @@ class CommunityScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: Colors.white24,
-            child: ClipOval(
-              child: Image.asset(
-                AppAssets.businessGroup,
-                width: 36,
-                height: 36,
-                fit: BoxFit.cover,
-              ),
+          // Tapping avatar/title directly navigates to Group Profile
+          InkWell(
+            onTap: () => context.push(
+              AppRoutes.groupProfile,
+              extra: {'groupName': 'Business group'},
             ),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            'Business group',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.white24,
+                  child: ClipOval(
+                    child: Image.asset(
+                      AppAssets.businessGroup,
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Business group',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
           const Spacer(),

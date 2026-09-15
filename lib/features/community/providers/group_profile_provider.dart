@@ -1,17 +1,20 @@
-import 'package:event_management_system/features/community/models/group_profile_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:event_management_system/app/constants/app_assets.dart';
+
+import 'package:event_management_system/features/community/models/group_profile_model.dart';
 
 class GroupProfileNotifier extends StateNotifier<GroupProfileState> {
   GroupProfileNotifier()
     : super(
         GroupProfileState(
-          groupId: 'Tech Group',
-          name: 'Tech Group',
-          description: 'Official Flutter & Cross-Platform Mobile Application Development Community.',
+          groupId: 'grp_1',
+          name: 'Business group',
+          description: 'Lorem ipsum dolor sit amet consectetur. Cras elit volutpat morbi mauris tincidunt lacus.',
           imageUrl: AppAssets.businessGroup,
-          memberCount: 1420,
+          memberCount: 14000,
           isJoined: false,
+          isMuted: false,
         ),
       );
 
@@ -29,6 +32,6 @@ class GroupProfileNotifier extends StateNotifier<GroupProfileState> {
 }
 
 final groupProfileProvider =
-    StateNotifierProvider<GroupProfileNotifier, GroupProfileState>((ref) {
-      return GroupProfileNotifier();
-    });
+    StateNotifierProvider<GroupProfileNotifier, GroupProfileState>(
+      (ref) => GroupProfileNotifier(),
+    );

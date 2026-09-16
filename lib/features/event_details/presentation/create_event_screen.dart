@@ -1,17 +1,20 @@
 import 'dart:io';
-
+import 'package:flutter/foundation.dart';
+import 'package:event_management_system/features/home/models/event_model.dart';
+import 'package:event_management_system/features/home/providers/event_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 
-class CreateEventScreen extends StatefulWidget {
+class CreateEventScreen extends ConsumerStatefulWidget {
   const CreateEventScreen({super.key});
 
   @override
-  State<CreateEventScreen> createState() => _CreateEventScreenState();
+  ConsumerState<CreateEventScreen> createState() => _CreateEventScreenState();
 }
 
-class _CreateEventScreenState extends State<CreateEventScreen> {
+class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _titleController = TextEditingController();
@@ -23,6 +26,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   XFile? _selectedImage;
+  bool _isLoading = false; // Added state declaration
 
   final ImagePicker _picker = ImagePicker();
 
@@ -72,13 +76,55 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // Logic to emit event state or call API provider
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedDate == null || _selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event Created Successfully')),
+        const SnackBar(content: Text('Please select a valid date and time')),
       );
-      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final DateTime eventDateTime = DateTime(
+      _selectedDate!.year,
+      _selectedDate!.month,
+      _selectedDate!.day,
+      _selectedTime!.hour,
+      _selectedTime!.minute,
+    );
+
+    try {
+      final newEvent = EventModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: _titleController.text.trim(),
+        description: _detailController.text.trim(),
+        dateTime: eventDateTime,
+        location: _locationController.text.trim(),
+        city: 'Default City',
+        state: 'Default State',
+        category: 'Business',
+        group: 'General',
+        imageUrl: _selectedImage?.path ?? 'assets/images/featuresCard.png',
+      );
+
+      await ref.read(eventProvider.notifier).addEvent(newEvent);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Event Created Successfully')),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error creating event: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -110,7 +156,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
-
               Row(
                 children: [
                   Expanded(
@@ -153,7 +198,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
               _buildLabel('Location'),
               _buildTextField(
                 controller: _locationController,
@@ -163,7 +207,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
-
               _buildLabel('Event Detail'),
               _buildTextField(
                 controller: _detailController,
@@ -174,26 +217,33 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
-
               _buildLabel('Upload Image'),
               _buildImagePickerBox(),
               const SizedBox(height: 30),
-
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _submitForm,
+                  onPressed: _isLoading ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'Create Event',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Create Event',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                 ),
               ),
             ],
@@ -260,10 +310,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         child: _selectedImage != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(_selectedImage!.path),
-                  fit: BoxFit.cover,
-                ),
+                child: kIsWeb
+                    ? Image.network(_selectedImage!.path, fit: BoxFit.cover)
+                    : Image.file(File(_selectedImage!.path), fit: BoxFit.cover),
               )
             : const Column(
                 mainAxisAlignment: MainAxisAlignment.center,

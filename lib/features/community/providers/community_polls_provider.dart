@@ -32,6 +32,12 @@ class CommunityPollsNotifier
     }
   }
 
+  /// Add a new poll to the state
+  Future<void> addPoll(PollModel newPoll) async {
+    final currentPolls = state.value ?? [];
+    state = AsyncValue.data([newPoll, ...currentPolls]);
+  }
+
   Future<void> voteOption(String pollId, String optionId) async {
     final currentPolls = state.value;
     if (currentPolls == null) return;

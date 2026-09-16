@@ -1,17 +1,21 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:event_management_system/features/community/models/community_poll_model.dart';
+import 'package:event_management_system/features/community/providers/community_polls_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 
-class CreateVoteScreen extends StatefulWidget {
+class CreateVoteScreen extends ConsumerStatefulWidget {
   const CreateVoteScreen({super.key});
 
   @override
-  State<CreateVoteScreen> createState() => _CreateVoteScreenState();
+  ConsumerState<CreateVoteScreen> createState() => _CreateVoteScreenState();
 }
 
-class _CreateVoteScreenState extends State<CreateVoteScreen> {
+class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _questionController = TextEditingController();
   final List<TextEditingController> _optionControllers = [
@@ -21,6 +25,7 @@ class _CreateVoteScreenState extends State<CreateVoteScreen> {
 
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false; // Added state declaration
 
   @override
   void dispose() {
@@ -41,10 +46,9 @@ class _CreateVoteScreenState extends State<CreateVoteScreen> {
 
   void _removeOption(int index) {
     if (_optionControllers.length > 2) {
-      setState(() {
-        _optionControllers[index].dispose();
-        _optionControllers.removeAt(index);
-      });
+      final controller = _optionControllers.removeAt(index);
+      controller.dispose();
+      setState(() {});
     }
   }
 
@@ -55,12 +59,44 @@ class _CreateVoteScreenState extends State<CreateVoteScreen> {
     }
   }
 
-  void _submitVote() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Poll/Vote Created Successfully')),
+  Future<void> _submitVote() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final newPoll = PollModel(
+        id: 'poll_${DateTime.now().millisecondsSinceEpoch}',
+        question: _questionController.text.trim(),
+        imageUrl: _selectedImage?.path,
+        options: _optionControllers
+            .asMap()
+            .entries
+            .map(
+              (e) => PollOption(
+                id: 'opt_${e.key}_${DateTime.now().millisecondsSinceEpoch}',
+                text: e.value.text.trim(),
+                votes: 0,
+              ),
+            )
+            .toList(),
       );
-      Navigator.of(context).pop();
+
+      await ref.read(communityPollsProvider.notifier).addPoll(newPoll);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Poll Created Successfully')),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error creating poll: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -109,7 +145,6 @@ class _CreateVoteScreenState extends State<CreateVoteScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -129,14 +164,14 @@ class _CreateVoteScreenState extends State<CreateVoteScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _optionControllers.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   return TextFormField(
+                    key: ObjectKey(_optionControllers[index]),
                     controller: _optionControllers[index],
                     validator: (val) => val == null || val.trim().isEmpty
                         ? 'Option cannot be empty'
@@ -169,7 +204,6 @@ class _CreateVoteScreenState extends State<CreateVoteScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
               const Text(
                 'Upload Image',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -187,10 +221,15 @@ class _CreateVoteScreenState extends State<CreateVoteScreen> {
                   child: _selectedImage != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            File(_selectedImage!.path),
-                            fit: BoxFit.cover,
-                          ),
+                          child: kIsWeb
+                              ? Image.network(
+                                  _selectedImage!.path,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.file(
+                                  File(_selectedImage!.path),
+                                  fit: BoxFit.cover,
+                                ),
                         )
                       : const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -211,24 +250,31 @@ class _CreateVoteScreenState extends State<CreateVoteScreen> {
                         ),
                 ),
               ),
-
               const SizedBox(height: 32),
-
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _submitVote,
+                  onPressed: _isLoading ? null : _submitVote,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'Create Vote',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Create Vote',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                 ),
               ),
             ],

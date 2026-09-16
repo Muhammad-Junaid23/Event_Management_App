@@ -164,6 +164,15 @@ class EventNotifier extends StateNotifier<EventState> {
       selectedDate: state.selectedDate,
     );
   }
+
+  /// Add a new event to the state
+  Future<void> addEvent(EventModel newEvent) async {
+    // Simulator delay for local state / API request placeholder
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    final updatedList = [newEvent, ...state.allEvents];
+    state = state.copyWith(allEvents: updatedList);
+  }
 }
 
 // ---------------------------------------------------------------------------

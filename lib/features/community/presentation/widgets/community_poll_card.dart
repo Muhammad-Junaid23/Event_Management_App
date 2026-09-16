@@ -1,3 +1,5 @@
+import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 import 'package:event_management_system/features/community/models/community_poll_model.dart';
 import 'package:flutter/material.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
@@ -39,7 +41,11 @@ class CommunityPollCard extends StatelessWidget {
             child: SizedBox(
               height: 220,
               width: double.infinity,
-              child: Image.asset(imagePath, fit: BoxFit.cover),
+              child: buildSmartImage(
+                imagePath,
+                fit: BoxFit.cover,
+                fallbackAsset: AppAssets.featuresCard,
+              ),
             ),
           ),
           Padding(

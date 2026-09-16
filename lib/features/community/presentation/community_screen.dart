@@ -50,7 +50,11 @@ class CommunityScreen extends ConsumerWidget {
                         return CommunityPollCard(
                           key: ValueKey(poll.id),
                           poll: poll,
-                          imagePath: AppAssets.featuresCard,
+                          imagePath:
+                              (poll.imageUrl != null &&
+                                  poll.imageUrl!.isNotEmpty)
+                              ? poll.imageUrl!
+                              : AppAssets.featuresCard,
                           timeAgo: '12hr ago',
                           isDark: isDark,
                           onOptionSelected: (selectedOptionId) {

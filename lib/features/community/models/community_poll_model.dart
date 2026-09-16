@@ -22,12 +22,14 @@ class PollModel {
   final String question;
   final List<PollOption> options;
   final String? userVotedOptionId;
+  final String? imageUrl; // Added imageUrl field
 
   PollModel({
     required this.id,
     required this.question,
     required this.options,
     this.userVotedOptionId,
+    this.imageUrl, // Added to constructor
   });
 
   int get totalVotes => options.fold(0, (sum, opt) => sum + opt.votes);
@@ -37,12 +39,14 @@ class PollModel {
     String? question,
     List<PollOption>? options,
     String? userVotedOptionId,
+    String? imageUrl,
   }) {
     return PollModel(
       id: id ?? this.id,
       question: question ?? this.question,
       options: options ?? this.options,
       userVotedOptionId: userVotedOptionId ?? this.userVotedOptionId,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 }

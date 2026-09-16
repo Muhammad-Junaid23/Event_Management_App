@@ -1,4 +1,5 @@
 import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 import 'package:flutter/material.dart';
 
 import 'package:event_management_system/app/constants/app_colors.dart';
@@ -63,7 +64,11 @@ class EventCard extends StatelessWidget {
                         height: 220,
                         width: double.infinity,
                         color: Colors.grey.shade300,
-                        child: Image.asset(activeImagePath, fit: BoxFit.cover),
+                        child: buildSmartImage(
+                          activeImagePath,
+                          fit: BoxFit.cover,
+                          fallbackAsset: AppAssets.featuresCard,
+                        ),
                       ),
                 ),
                 Positioned(

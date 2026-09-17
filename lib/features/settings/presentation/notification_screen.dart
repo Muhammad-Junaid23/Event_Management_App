@@ -1,34 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/features/settings/providers/notification_provider.dart';
+import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 
-class NotificationModel {
-  final String text;
-  final String time;
-  final bool isUnread;
-
-  NotificationModel({
-    required this.text,
-    required this.time,
-    this.isUnread = false,
-  });
-}
-
-class NotificationScreen extends StatelessWidget {
-  final List<NotificationModel> notifications = List.generate(
-    8,
-    (index) => NotificationModel(
-      text: 'Lorem ipsum dolor sit amet consectetur.',
-      time: '4:00 PM',
-      isUnread: index < 3, // Top 3 matching red indicators in design
-    ),
-  );
-
-  NotificationScreen({super.key});
+class NotificationScreen extends ConsumerWidget {
+  const NotificationScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifications = ref.watch(notificationProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -50,6 +33,18 @@ class NotificationScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Create a test notifications notifier addition method or mock triggers
+              ref.read(notificationProvider.notifier).addNewTestNotification();
+            },
+            child: const Text(
+              'Add Test',
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -59,62 +54,73 @@ class NotificationScreen extends StatelessWidget {
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final item = notifications[index];
-          return Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : const Color(0xFFF7F7F7),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                // Thumbnail
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.asset(
-                    AppAssets.featuresCard,
-                    width: 52,
-                    height: 52,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Notification Content
-                Expanded(
-                  child: Text(
-                    item.text,
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.3,
-                      color: isDark ? Colors.white : Colors.black87,
+          return InkWell(
+            onTap: () {
+              ref.read(notificationProvider.notifier).markAsRead(item.id);
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : const Color(0xFFF7F7F7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  // Thumbnail
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: SizedBox(
+                      width: 52,
+                      height: 52,
+                      child: buildSmartImage(
+                        item.imageUrl ?? AppAssets.featuresCard,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
 
-                // Indicator + Timestamp
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (item.isUnread)
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
+                  // Notification Content
+                  Expanded(
+                    child: Text(
+                      item.text,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.3,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ),
+
+                  // Indicator + Timestamp
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (item.isUnread)
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      else
+                        const SizedBox(height: 1),
+                      const SizedBox(height: 8),
+                      Text(
+                        item.time,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
                         ),
-                      )
-                    else
-                      const SizedBox(height: 0),
-                    const SizedBox(height: 8),
-                    Text(
-                      item.time,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         },

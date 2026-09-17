@@ -1,31 +1,31 @@
-import 'package:event_management_system/app/config/routes.dart';
+import 'package:event_management_system/features/settings/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:event_management_system/app/config/routes.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
-import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/features/settings/providers/user_provider.dart';
+import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 
-class SettingsScreen extends StatelessWidget {
-  final String userName;
-  final String userEmail;
-  final String profileImagePath;
-
-  const SettingsScreen({
-    super.key,
-    this.userName = 'Morgan mill',
-    this.userEmail = 'example23@gmail.com',
-    this.profileImagePath = AppAssets.user1,
-  });
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final themeMode = ref.watch(themeProvider);
+    final platformBrightness = MediaQuery.platformBrightnessOf(context);
+
+    final isDark = themeMode == ThemeMode.system
+        ? platformBrightness == Brightness.dark
+        : themeMode == ThemeMode.dark;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : Colors.white,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Setting',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
@@ -38,16 +38,22 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Column(
           children: [
-            // User Avatar
-            CircleAvatar(
-              radius: 40,
-              backgroundImage: AssetImage(profileImagePath),
+            // User Avatar with Smart Image Support
+            ClipOval(
+              child: SizedBox(
+                width: 80,
+                height: 80,
+                child: buildSmartImage(
+                  user.profileImagePath,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
 
             // User Info
             Text(
-              userName,
+              user.name,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -56,7 +62,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              userEmail,
+              user.email,
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textUserEmail,
@@ -98,9 +104,7 @@ class SettingsScreen extends StatelessWidget {
               context,
               icon: Icons.notifications_none,
               title: 'Notifications',
-              onTap: () {
-                context.push(AppRoutes.notification);
-              },
+              onTap: () => context.push(AppRoutes.notification),
             ),
             _buildSettingTile(
               context,
@@ -130,6 +134,12 @@ class SettingsScreen extends StatelessWidget {
               context,
               icon: Icons.dark_mode_outlined,
               title: 'Dark Mode',
+              trailing: Switch(
+                value: isDark,
+                onChanged: (_) {
+                  ref.read(themeProvider.notifier).toggleTheme(isDark);
+                },
+              ),
               onTap: () {},
             ),
             _buildSettingTile(
@@ -137,7 +147,39 @@ class SettingsScreen extends StatelessWidget {
               icon: Icons.logout,
               title: 'Logout',
               isLogout: true,
-              onTap: () {},
+              onTap: () {
+                // Show confirmation dialog before erasing
+                showDialog(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('Logout'),
+                    content: const Text('Are you sure you want to log out?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // 1. Dismiss the dialog first
+                          Navigator.pop(dialogContext);
+
+                          // 2. Reset user profile and auth state to defaults
+                          ref.invalidate(userProvider);
+                          // ref.read(authNotifierProvider.notifier).logout(); // Uncomment when auth notifier is connected
+
+                          // 3. Navigate back to login screen and clear history
+                          context.go(AppRoutes.login);
+                        },
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(color: AppColors.primary),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -151,6 +193,7 @@ class SettingsScreen extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
     bool isLogout = false,
+    Widget? trailing,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -175,11 +218,15 @@ class SettingsScreen extends StatelessWidget {
                   : (isDark ? Colors.white : Colors.black),
             ),
           ),
-          trailing: const Icon(
-            Icons.chevron_right,
-            color: Colors.grey,
-            size: 20,
-          ),
+          trailing:
+              trailing ??
+              (isLogout
+                  ? null
+                  : const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                      size: 20,
+                    )),
           onTap: onTap,
         ),
         if (!isLogout)

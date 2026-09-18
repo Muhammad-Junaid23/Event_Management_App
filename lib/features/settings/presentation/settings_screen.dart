@@ -14,7 +14,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(userProvider);
-    final theme = Theme.of(context);
     final themeMode = ref.watch(themeProvider);
     final platformBrightness = MediaQuery.platformBrightnessOf(context);
 

@@ -1,111 +1,225 @@
-1 - on the splash screen we have only this color in (background: #CF3232;)
-and a logo in the center of screen
-2- on boarding screen 1 we have a skip text on top right with color : CF3232
-then an image in the center and below the image a title text in #000000
-and then below the title a text with color: #727272;
-at the bottom a button with background :#CF3232
-and above the button three dots (first dot has color #CF3232 , second and third has #E6E6E6)
-3- on boarding screen 2 , we have same as screen 2 just the dot in middle is in color CF3232 and 1st and 3rd have #E6E6E6
-4- on boarding screen has no skip text on the top right and now the 3rd dot is CF3232 and the bottom button text is changed from next to get started.
-5- on the login screen we a title login into your account (login is in color:CF3232 and into your account is in black -#1F1F1F)
-below is the text in color #505050
-then we have two input fields with label in color #000000
-and placeholder text in #505050 and input border in border: 0.4px solid #9A9A9A ...
-then we have login button in CF3232 color
-then google login button with border color: border: 0.4px solid #9A9A9A
-and text color : #505050...
-6- same as login for signup screen
-7- home screen, has alot of mixed colours ,
-filter icon border : #DDDDDD
-filter icon : #5A5A5A
-callender view button color: CF3232
-list view color : #727272
-inside callender month name color:#222B45
-year and day color : #8F9BB3
-callender bottom border color: #5E5E5E
-tech meetup card border :#CFCFCF
-heart icon outline : #555555
-card title: #000000
-subttile: #7A7A7A
-location text : #3C3C3C
-icon and button color :#CF3232
-then in the home page bottom bar
-active icon color:#CF3232
-active icon text : #0E0E0E
-inactive icon and text color:#555555
-then event filter popup,
-selection field border : #838383
-inactive tags border color : #545454
-inactive tags icon and text : 545454
-active tags border color : #CF3232
-active tags icon and text : #FFFFFF
-clear filter button border : #000000
-clear filter button text:#555555
-apply filter button text: #FFFFFF
-apply filter button color: #CF3232
-8- features page, in features card border color:#BABABA
-text color : #000000
-button : CF3232 with white text
-9- community page, community card border color: #3E3E3E
-option a,b main text: #424242
-option a,b vote text ; #9F9F9F
-selected option color : Cf3232
-unselected option color: #555555
-10- ffavourite page, it is same as features except that the title on the page is in color : #555555
-11- setting page:
-title is in same color: #555555
-user name below image:#000000
-user email:#848484
-edit profile button CF3232
-list of items notification ,privacy policy etc
-starting icon : #555555
-text : #272727
-ending icon:#4D4D4D
-border bottom:#A2A2A2
-the last one logout text and starting icon :#EA252D
-12 - edit details page,
-input field border:#9A9A9A
-placeholder:#505050
-button:CF3232
-13- notification page:
-tile background color:#F5F5F5
-text:#000000
-14-even detail page:
-icon over image : #FFFFFF
-main title , location,date :#000000
-text background: box-shadow: 0px 4px 4px 0px #00000040;
-text color:#5B5B5B
-button :#CF3232
-button text:#FFFFFF
-15- group profile page:
-icon color: FFFFFF
-title below image:#000000
-subtitlle :#555555
-button color:background: #CF323233;
-button text color:#CF3232
+## Guiding principle
 
---- in the screens (3 onboarding screen,login,signup,home,business group,etc)
-their is a background image with light greyish dog paws on it
+**Don’t rewrite screens.** Change what’s _behind_ the providers. If a screen does `ref.watch(eventProvider)`, keep that name and shape — just change the notifier to fetch from Firebase. That way the UI never breaks.
+
+Do this in **phases**. Finish and test one phase before starting the next.
 
 ---
 
-we have around 16 UI screens
-now tell after we add the colors ...
-should i share the screen shot of each UI page
-or multiple pages image will work tooo
+## Phase 0 — Freeze & branch (do this first)
+
+1. Commit current working demo as a tag, e.g. `demo-stable`.
+2. Create branch `feat/firebase-integration`.
+3. Add Firebase now, but don’t use it yet:
+   ```yaml
+   firebase_core
+   cloud_firestore
+   firebase_auth
+   firebase_storage
+   firebase_messaging
+   cloud_functions # if you use them
+   ```
+4. Run `flutterfire configure`. Verify `main.dart` still runs the demo. If yes, you have a safety net.
+
+At this point the app **behaves exactly the same**. That’s the goal of Phase 0.
 
 ---
 
-Grouping related screens allows us to build entire flows (UI, logic, and navigation) in single, focused passes:
+## Phase 1 — Small fixes that must happen before backend
 
-Group 1: Splash Screen + 3 Onboarding Walkthrough Screens
+Do these now because they’ll bite you during integration.
 
-Group 2: Login Screen + Signup Screen
+1. **Fix `buildSmartImage`** — right now `assets/...` paths fall through to `File(...)`. Add the asset check first. Without this, event images will silently break when URLs change.
 
-Group 3: Home Screen + Event Filter Popup
+2. **Replace `Image.asset(event.imageUrl)` with `buildSmartImage(...)`** in:
+   - `event_details_screen.dart`
+   - `home/presentation/widgets/event_card.dart`
+   - `group_profile_screen.dart`
 
-Group 4: Features + Community + Favorites Screens
+   Firebase will return `https://...` URLs; `Image.asset` will throw.
 
-Group 5: Settings + Edit Profile + Notification Screens
+3. **Add `mounted` guards** after every `await` that calls `setState`. You already do this in some places; do it everywhere.
 
-Group 6: Event Details + Group Profile Screens
+4. **Fix logout** — it currently only invalidates the mock user. It must call `authProvider.notifier.logout()`.
+
+5. **Persist theme** — save `ThemeMode` in `SharedPreferences`. Without this, users will complain the moment you ship.
+
+None of these change the UI. They just make it safe.
+
+---
+
+## Phase 2 — Model layer (no UI change yet)
+
+Backend returns JSON. Your models must survive that JSON.
+
+For each model, add `fromJson` / `toJson` and make parsing **defensive**:
+
+- `EventModel` — already has JSON, but harden it:
+  - `dateTime`: Firebase gives `Timestamp`, REST gives ISO string, mock gives ISO. Write a helper:
+    ```dart
+    static DateTime _parseDate(dynamic v) {
+      if (v is Timestamp) return v.toDate();
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      if (v is String) return DateTime.parse(v);
+      return DateTime.now();
+    }
+    ```
+  - `id`: Firebase doc ID, not from JSON body. Handle `id` being absent.
+  - `imageUrl`: `as String? ?? ''`.
+  - Remove `isFavorite` from the event document. Favorites belong in a `user_favorites/{uid}/events/{eventId}` collection. Keep the field in the model if you want, but populate it from a separate lookup.
+
+- Add `fromJson` / `toJson` to `PollModel`, `PollOption`, `NotificationModel`, `UserModel`, `GroupProfileState`.
+
+- **Unify `UserModel`** — you have two copies. Delete `features/settings/models/user_model.dart` and import the one in `features/auth/domain/`.
+
+- Create **request DTOs** separate from models:
+  - `CreateEventRequest`, `CreatePollRequest`, `VoteRequest`, `UpdateProfileRequest`, `JoinGroupRequest`.
+  - These don’t include `id`, `isFavorite`, `createdAt` — the backend sets those.
+
+Still no UI change. The demo still works.
+
+---
+
+## Phase 3 — Repository layer (still no UI change)
+
+Introduce repositories that own Firebase. Providers will call these. **Nothing in the UI changes yet**, because the demo providers still hit local data.
+
+Create:
+
+- `AuthRepository` — signup, login, google, logout, currentUser, token
+- `EventRepository` — stream/list, getById, create, update, delete, toggleFavorite
+- `PollRepository` — stream/list, create, vote
+- `GroupRepository` — get, join, leave, mute
+- `NotificationRepository` — stream, markRead
+- `UserRepository` — get, update, uploadAvatar
+- `StorageRepository` — upload images, return download URL
+
+Each repository takes `FirebaseFirestore`, `FirebaseAuth`, `FirebaseStorage` via constructor. Expose via Riverpod `Provider`. This is where Firebase SDK lives — nowhere else.
+
+Rule: **no screen or notifier imports Firebase directly.** Only repositories.
+
+---
+
+## Phase 4 — Storage service for images (needed before events/polls)
+
+Right now `CreateEventScreen` saves `imageUrl: _selectedImage?.path` — a local file path. That will break the moment you switch to Firebase.
+
+Add to `StorageRepository`:
+
+```dart
+Future<String> uploadEventImage(XFile file, String userId);
+Future<String> uploadPollImage(XFile file, String userId);
+Future<String> uploadAvatar(XFile file, String userId);
+```
+
+On web, `XFile` has `readAsBytes()`. On mobile, use `File(file.path)`. Wrap with `kIsWeb` check.
+
+Also: show upload progress and handle failure. Otherwise the create screen will look “stuck”.
+
+---
+
+## Phase 5 — Provider swap, one feature at a time
+
+This is the actual integration. **Do one feature per PR**, test, merge, next.
+
+Order (easiest → hardest):
+
+1. **Theme** — already local. Add persistence. 30 min.
+2. **Notifications** — read-only list. Good warmup for Firebase.
+3. **Group profile** — small state.
+4. **Polls** — create + vote. Watch out: voting needs a transaction to avoid double-vote.
+5. **Events** — biggest one. Split first:
+   - `eventsProvider` → `AsyncNotifier<AsyncValue<List<EventModel>>>` from Firestore.
+   - `eventFiltersProvider` → `Notifier<EventFilters>` (city, state, group, category).
+   - `selectedDateProvider` → `Notifier<DateTime>`.
+   - `filteredEventsProvider` → derived (unchanged signature, screens don’t care).
+   - `selectedDateEventsProvider` → derived.
+   - `favoriteEventsProvider` → derived or from `user_favorites`.
+6. **Auth** — last, because everything else depends on `uid`. Do this after events work.
+
+For each swap, keep the **provider name and public state shape** if possible. If a screen does:
+
+```dart
+final events = ref.watch(filteredEventsProvider);
+```
+
+Keep that exact line working. Only the internals change.
+
+Where the shape _must_ change (e.g. `List` → `AsyncValue<List>`), update that one screen. That’s the only place UI code touches.
+
+---
+
+## Phase 6 — Auth + routing
+
+Once repositories and providers are Firebase-backed:
+
+1. Implement `AuthRepository` with `firebase_auth`.
+2. `AuthState` gains `user`, `token`, `isLoading`, `error`.
+3. Add a **GoRouter `redirect`**:
+   ```dart
+   redirect: (context, state) {
+     final auth = ref.read(authProvider);
+     final loggingIn = state.matchedLocation == AppRoutes.login
+         || state.matchedLocation == AppRoutes.signup;
+     if (!auth.isLoggedIn && !loggingIn) return AppRoutes.login;
+     if (auth.isLoggedIn && loggingIn) return AppRoutes.home;
+     return null;
+   }
+   ```
+4. Add `refreshListenable` so router re-runs on auth change.
+5. Replace hardcoded `context.go('/home')` with `context.go(AppRoutes.home)`.
+6. Switch `eventDetails` and `groupProfile` to **path params** (`/event-details/:eventId`) so web refresh works.
+
+---
+
+## Phase 7 — Firebase setup in `main.dart`
+
+Now wire Firebase:
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(ProviderScope(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+    child: const EventManagementApp(),
+  ));
+}
+```
+
+Don’t call `Firebase.initializeApp` inside providers. One call, in `main`.
+
+---
+
+## Phase 8 — Cleanup
+
+Once everything is Firebase-backed:
+
+- Delete mock data from notifiers (`EventNotifier` mock events, `NotificationNotifier` seed list, `GroupProfileNotifier` mock group, `UserNotifier` mock user).
+- Remove the “Add Test” button from `NotificationScreen`.
+- Remove `featuresEventProvider` (unused duplicate).
+- Remove `AuthApiService` if you’re going full Firebase, or keep it for REST fallback.
+- Remove `loginWithCredentials` mock branch.
+
+---
+
+## Rules that keep you from breaking the app
+
+1. **Never change a screen and a provider in the same PR.** One or the other.
+2. **Keep the demo branch alive.** If Firebase integration hits a wall, you can still demo.
+3. **One feature per PR.** Merge, test on web + Android + iOS, next.
+4. **Screens only know providers, providers only know repositories, repositories only know Firebase.**
+5. **Don’t leak Firestore types** (`Timestamp`, `DocumentSnapshot`) into models or providers — convert at the repository boundary.
+6. **Don’t remove mock data until the Firebase version is verified.** Toggle with a flag if needed:
+   ```dart
+   const useFirebase = bool.fromEnvironment('USE_FIREBASE');
+   ```
+   Override providers in `main.dart` based on the flag. This lets you flip back instantly.
+
+---

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 
 import 'package:event_management_system/app/config/routes.dart';
 
@@ -248,13 +249,14 @@ class GroupProfileScreen extends ConsumerWidget {
                         border: Border.all(color: Colors.white, width: 3),
                       ),
                       child: ClipOval(
-                        child: Image.asset(
-                          groupProfile.imageUrl.isNotEmpty
-                              ? groupProfile.imageUrl
-                              : AppAssets.businessGroup,
+                        child: SizedBox(
                           width: 76,
                           height: 76,
-                          fit: BoxFit.cover,
+                          child: buildSmartImage(
+                            groupProfile.imageUrl,
+                            fit: BoxFit.cover,
+                            fallbackAsset: AppAssets.businessGroup,
+                          ),
                         ),
                       ),
                     ),

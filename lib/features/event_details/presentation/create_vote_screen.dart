@@ -54,6 +54,7 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (!mounted) return;
     if (image != null) {
       setState(() => _selectedImage = image);
     }

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:event_management_system/features/home/models/event_model.dart';
 import 'package:event_management_system/features/home/providers/event_provider.dart';
@@ -42,6 +43,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (!mounted) return;
     if (image != null) {
       setState(() => _selectedImage = image);
     }

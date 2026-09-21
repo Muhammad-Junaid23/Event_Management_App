@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
 import 'package:intl/intl.dart';
+import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 
 class EventDetailsScreen extends ConsumerWidget {
   final String eventId;
@@ -47,18 +48,10 @@ class EventDetailsScreen extends ConsumerWidget {
                       SizedBox(
                         height: screenHeight * 0.35,
                         width: double.infinity,
-                        child: Image.asset(
-                          (event.imageUrl.isNotEmpty)
-                              ? event.imageUrl
-                              : AppAssets.featuresCard,
-                          fit: BoxFit.cover, // Ensures uniform crop across all image aspect ratios
-                          errorBuilder: (context, error, stackTrace) {
-                            // Fallback if asset path is invalid
-                            return Image.asset(
-                              AppAssets.featuresCard,
-                              fit: BoxFit.cover,
-                            );
-                          },
+                        child: buildSmartImage(
+                          event.imageUrl,
+                          fit: BoxFit.cover,
+                          fallbackAsset: AppAssets.featuresCard,
                         ),
                       ),
                       SafeArea(

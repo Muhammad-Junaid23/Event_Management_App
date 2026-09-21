@@ -1,4 +1,4 @@
-import 'package:event_management_system/features/settings/models/user_model.dart';
+import 'package:event_management_system/features/auth/domain/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';

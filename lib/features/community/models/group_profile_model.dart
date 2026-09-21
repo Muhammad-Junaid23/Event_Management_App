@@ -1,4 +1,5 @@
 import 'package:event_management_system/features/home/models/event_model.dart';
+import 'package:event_management_system/core/utils/json_utils.dart';
 
 class GroupProfileState {
   final String groupId;
@@ -45,5 +46,38 @@ class GroupProfileState {
       events: events ?? this.events,
       isLoading: isLoading ?? this.isLoading,
     );
+  }
+
+  factory GroupProfileState.fromJson(Map<String, dynamic> json) {
+    final rawEvents = json['events'];
+    return GroupProfileState(
+      groupId: parseString(json['groupId'] ?? json['id']),
+      name: parseString(json['name']),
+      description: parseString(json['description']),
+      imageUrl: parseString(json['imageUrl']),
+      memberCount: parseInt(json['memberCount']),
+      isJoined: parseBool(json['isJoined']),
+      isMuted: parseBool(json['isMuted']),
+      events: rawEvents is List
+          ? rawEvents
+                .whereType<Map>()
+                .map((e) => EventModel.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
+          : const [],
+      isLoading: false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'groupId': groupId,
+      'name': name,
+      'description': description,
+      'imageUrl': imageUrl,
+      'memberCount': memberCount,
+      'isJoined': isJoined,
+      'isMuted': isMuted,
+      'events': events.map((e) => e.toJson()).toList(),
+    };
   }
 }

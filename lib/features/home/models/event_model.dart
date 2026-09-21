@@ -1,3 +1,5 @@
+import 'package:event_management_system/core/utils/json_utils.dart';
+
 class EventModel {
   final String id;
   final String title;
@@ -53,29 +55,37 @@ class EventModel {
     );
   }
 
-  //Adding JSON serialization methods
+  /// Handles Firestore docs, REST payloads, and mock data.
+  ///
+  /// Accepted shapes:
+  /// - id from `id` or `_id` (Firestore doc ID is passed by the repository)
+  /// - dateTime from Timestamp, ISO string, or millis
+  /// - isFavorite is user-specific; default false if absent
   factory EventModel.fromJson(Map<String, dynamic> json) {
     return EventModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      dateTime: DateTime.parse(json['dateTime'] as String),
-      location: json['location'] as String,
-      city: json['city'] as String,
-      state: json['state'] as String,
-      category: json['category'] as String,
-      group: json['group'] as String,
-      imageUrl: json['imageUrl'] as String,
-      isFavorite: json['isFavorite'] as bool? ?? false,
+      id: parseString(json['id'] ?? json['_id']),
+      title: parseString(json['title']),
+      description: parseString(json['description']),
+      dateTime: parseDateTime(json['dateTime']) ?? DateTime.now(),
+      location: parseString(json['location']),
+      city: parseString(json['city']),
+      state: parseString(json['state']),
+      category: parseString(json['category']),
+      group: parseString(json['group'] ?? json['groupId']),
+      imageUrl: parseString(json['imageUrl']),
+      isFavorite: parseBool(json['isFavorite']),
     );
   }
 
+  /// Do NOT include `id`, `createdAt`, `updatedAt`, or `isFavorite` when
+  /// creating via the backend — those are set server-side.
+  /// This toJson is used for local persistence and for update payloads.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'title': title,
       'description': description,
-      'dateTime': dateTime.toIso8601String(),
+      'dateTime': serializeDateTime(dateTime),
       'location': location,
       'city': city,
       'state': state,

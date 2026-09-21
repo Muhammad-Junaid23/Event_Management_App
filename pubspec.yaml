@@ -34,14 +34,20 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  flutter_riverpod: ^2.5.1
-  go_router: ^14.2.0
-  google_fonts: ^6.2.1 # Optional, but makes matching Figma fonts very easy
+  flutter_riverpod: ^2.6.1
+  go_router: ^18.0.1
+  google_fonts: ^8.2.1 # Optional, but makes matching Figma fonts very easy
   table_calendar: ^3.2.1
   shared_preferences: ^2.5.5
   http: ^1.6.0
   intl: ^0.20.3
   image_picker: ^1.2.3
+  firebase_core: ^4.14.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
+  firebase_storage: ^13.6.0
+  firebase_messaging: ^16.7.0
+
 
 dev_dependencies:
   flutter_test:

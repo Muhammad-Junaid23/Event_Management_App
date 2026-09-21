@@ -1,9 +1,12 @@
+import 'package:event_management_system/core/utils/json_utils.dart';
+
 class NotificationModel {
   final String id;
   final String text;
-  final String time;
+  final String time; // display string ("4:00 PM", "Now")
   final String? imageUrl;
   final bool isUnread;
+  final DateTime? createdAt; // real timestamp for sorting; optional
 
   NotificationModel({
     required this.id,
@@ -11,6 +14,7 @@ class NotificationModel {
     required this.time,
     this.imageUrl,
     this.isUnread = false,
+    this.createdAt,
   });
 
   NotificationModel copyWith({
@@ -19,6 +23,7 @@ class NotificationModel {
     String? time,
     String? imageUrl,
     bool? isUnread,
+    DateTime? createdAt,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -26,6 +31,29 @@ class NotificationModel {
       time: time ?? this.time,
       imageUrl: imageUrl ?? this.imageUrl,
       isUnread: isUnread ?? this.isUnread,
+      createdAt: createdAt ?? this.createdAt,
     );
+  }
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      id: parseString(json['id'] ?? json['_id']),
+      text: parseString(json['text']),
+      time: parseString(json['time']),
+      imageUrl: json['imageUrl'] as String?,
+      isUnread: parseBool(json['isUnread']),
+      createdAt: parseDateTime(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'text': text,
+      'time': time,
+      'imageUrl': imageUrl,
+      'isUnread': isUnread,
+      'createdAt': serializeDateTime(createdAt),
+    };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 
 import '../../models/event_model.dart';
 import '../../providers/event_provider.dart';
@@ -42,7 +43,7 @@ class EventCard extends ConsumerWidget {
                     width: 44,
                     height: 44,
                     color: Colors.grey.shade300,
-                    child: Image.asset(event.imageUrl, fit: BoxFit.cover),
+                    child: buildSmartImage(event.imageUrl, fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(width: 12),

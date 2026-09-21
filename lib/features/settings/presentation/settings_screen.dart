@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:event_management_system/features/auth/providers/auth_provider.dart';
+import 'package:event_management_system/features/home/providers/event_provider.dart';
+import 'package:event_management_system/features/settings/providers/notification_provider.dart';
+import 'package:event_management_system/features/community/providers/community_polls_provider.dart';
+import 'package:event_management_system/features/community/providers/group_profile_provider.dart';
+
 import 'package:event_management_system/app/config/routes.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/features/settings/providers/user_provider.dart';
@@ -135,8 +141,10 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Dark Mode',
               trailing: Switch(
                 value: isDark,
-                onChanged: (_) {
-                  ref.read(themeProvider.notifier).toggleTheme(isDark);
+                onChanged: (value) {
+                  ref
+                      .read(themeProvider.notifier)
+                      .setTheme(value ? ThemeMode.dark : ThemeMode.light);
                 },
               ),
               onTap: () {},
@@ -159,16 +167,22 @@ class SettingsScreen extends ConsumerWidget {
                         child: const Text('Cancel'),
                       ),
                       TextButton(
-                        onPressed: () {
-                          // 1. Dismiss the dialog first
+                        onPressed: () async {
+                          // 1. Dismiss the dialog
                           Navigator.pop(dialogContext);
 
-                          // 2. Reset user profile and auth state to defaults
+                          // 2. Clear auth + reset providers
+                          await ref.read(authProvider.notifier).logout();
                           ref.invalidate(userProvider);
-                          // ref.read(authNotifierProvider.notifier).logout(); // Uncomment when auth notifier is connected
+                          ref.invalidate(eventProvider);
+                          ref.invalidate(notificationProvider);
+                          ref.invalidate(communityPollsProvider);
+                          ref.invalidate(groupProfileProvider);
 
-                          // 3. Navigate back to login screen and clear history
-                          context.go(AppRoutes.login);
+                          // 3. Navigate to login
+                          if (context.mounted) {
+                            context.go(AppRoutes.login);
+                          }
                         },
                         child: const Text(
                           'Logout',

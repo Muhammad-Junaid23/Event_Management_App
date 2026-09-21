@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:event_management_system/app/constants/app_assets.dart'; // Verify this path imports AppAssets
+import 'package:event_management_system/app/constants/app_assets.dart';
 
 Widget buildSmartImage(
   String path, {
@@ -15,36 +15,56 @@ Widget buildSmartImage(
     return Image.asset(fallback, fit: fit);
   }
 
-  // 1. Web Blob or HTTP URL
-  if (path.startsWith('blob:') ||
-      path.startsWith('http://') ||
-      path.startsWith('https://')) {
-    return Image.network(
+  // 1. Asset path (must come BEFORE the file check)
+  if (path.startsWith('assets/')) {
+    return Image.asset(
       path,
       fit: fit,
       errorBuilder: (_, __, ___) => Image.asset(fallback, fit: fit),
     );
   }
 
-  // 2. Mobile Local File System (Android/iOS)
-  // FIXED: Escaped the backslash (:\\) to prevent string parsing errors
-  if (!kIsWeb &&
-      (path.startsWith('/') || path.contains(':\\') || path.contains('/'))) {
+  // 2. Web blob or remote URL
+  if (path.startsWith('blob:') ||
+      path.startsWith('http://') ||
+      path.startsWith('https://')) {
+    return Image.network(
+      path,
+      fit: fit,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return Container(
+          color: Colors.grey.shade200,
+          alignment: Alignment.center,
+          child: const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      },
+      errorBuilder: (_, __, ___) => Image.asset(fallback, fit: fit),
+    );
+  }
+
+  // 3. Mobile local file path
+  if (!kIsWeb) {
     try {
       final file = File(path);
-      if (file.existsSync()) {
-        return Image.file(
-          file,
-          fit: fit,
-          errorBuilder: (_, __, ___) => Image.asset(fallback, fit: fit),
-        );
-      }
+      // NOTE: no existsSync() here — it's blocking I/O in build.
+      // Image.file has its own errorBuilder; if the file is missing
+      // we fall back gracefully.
+      return Image.file(
+        file,
+        fit: fit,
+        errorBuilder: (_, __, ___) => Image.asset(fallback, fit: fit),
+      );
     } catch (_) {
-      // Fallback if file access fails
+      // fall through to asset fallback
     }
   }
 
-  // 3. Guaranteed Fallback
+  // 4. Guaranteed fallback
   return Image.asset(
     fallback,
     fit: fit,

@@ -1,111 +1,210 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:event_management_system/core/repositories/auth_repository.dart';
+import 'package:event_management_system/core/repositories/user_repository.dart';
 import 'package:event_management_system/core/services/storage_service.dart';
 
+// -----------------------------------------------------------------------------
+// SharedPreferences + StorageService (unchanged location — main.dart imports
+// sharedPreferencesProvider from this file)
+// -----------------------------------------------------------------------------
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('Initialize sharedPreferencesProvider in main.dart');
 });
 
 final storageServiceProvider = Provider<StorageService>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return StorageService(prefs);
+  return StorageService(ref.watch(sharedPreferencesProvider));
 });
 
+// -----------------------------------------------------------------------------
+// Auth stream + uid (used by other providers in later phases)
+// -----------------------------------------------------------------------------
+final authStateChangesProvider = StreamProvider<User?>((ref) {
+  return ref.watch(authRepositoryProvider).authStateChanges();
+});
+
+/// Current Firebase uid, or null if signed out.
+final currentUidProvider = Provider<String?>((ref) {
+  return ref.watch(authRepositoryProvider).currentUid;
+});
+
+// -----------------------------------------------------------------------------
+// Auth state
+// -----------------------------------------------------------------------------
 class AuthState {
   final bool isFirstTime;
   final bool isLoggedIn;
+  final bool isLoading;
+  final String? errorMessage;
 
-  const AuthState({required this.isFirstTime, required this.isLoggedIn});
-}
+  const AuthState({
+    required this.isFirstTime,
+    required this.isLoggedIn,
+    this.isLoading = false,
+    this.errorMessage,
+  });
 
-class AuthNotifier extends Notifier<AuthState> {
-  late final StorageService _storageService;
-
-  @override
-  AuthState build() {
-    _storageService = ref.watch(storageServiceProvider);
-
-    final isFirstTime = _storageService.isFirstTime();
-    final token = _storageService.getToken();
-
+  AuthState copyWith({
+    bool? isFirstTime,
+    bool? isLoggedIn,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
     return AuthState(
-      isFirstTime: isFirstTime,
-      isLoggedIn: token != null && token.isNotEmpty,
+      isFirstTime: isFirstTime ?? this.isFirstTime,
+      isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
+}
+
+// -----------------------------------------------------------------------------
+// Notifier
+// -----------------------------------------------------------------------------
+class AuthNotifier extends StateNotifier<AuthState> {
+  AuthNotifier(this._authRepo, this._userRepo, this._storage)
+    : super(
+        AuthState(
+          isFirstTime: _storage.isFirstTime(),
+          // FirebaseAuth persists its own session; currentUser is the source
+          // of truth. No SharedPreferences token needed anymore.
+          isLoggedIn: _authRepo.isLoggedIn,
+        ),
+      );
+
+  final AuthRepository _authRepo;
+  final UserRepository _userRepo;
+  final StorageService _storage;
 
   Future<void> completeOnboarding() async {
-    await _storageService.setFirstTimeCompleted();
-    state = AuthState(isFirstTime: false, isLoggedIn: state.isLoggedIn);
+    await _storage.setFirstTimeCompleted();
+    state = state.copyWith(isFirstTime: false);
   }
 
-  Future<void> login(String token) async {
-    await _storageService.saveToken(token);
-    state = AuthState(isFirstTime: false, isLoggedIn: true);
-  }
-
-  Future<void> logout() async {
-    await _storageService.clearAuth();
-    state = AuthState(isFirstTime: state.isFirstTime, isLoggedIn: false);
-  }
-
-  // Add this method inside your AuthNotifier class:
-  // --- MOCKED LOGIN METHOD FOR DEMO ---
   Future<void> loginWithCredentials({
     required String email,
     required String password,
   }) async {
-    // 1. Simulate network delay (1.2 seconds)
-    await Future.delayed(const Duration(milliseconds: 1200));
-
-    // 2. Demo validation logic
-    if (email.trim().toLowerCase() == 'admin@gmail.com' &&
-        password == '123456') {
-      const mockToken = 'demo_jwt_token_123456789';
-
-      // Save dummy token and update isLoggedIn state
-      await login(mockToken);
-    } else {
-      throw Exception('Invalid credentials. Use admin@gmail.com / 123456');
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final uid = await _authRepo.login(email: email, password: password);
+      // Firestore hiccup shouldn't block auth. Log it, keep going.
+      try {
+        await _userRepo.createIfMissing(
+          uid: uid,
+          name: _authRepo.currentFirebaseUser?.displayName ?? '',
+          email: email.trim(),
+        );
+      } catch (e) {
+        debugPrint('createIfMissing failed (non-fatal): $e');
+      }
+      state = state.copyWith(isLoading: false, isLoggedIn: true);
+    } catch (e) {
+      final msg = _friendlyAuthError(e);
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+      throw Exception(msg);
     }
-
-    /* 
-    // REAL API IMPLEMENTATION (Uncomment when backend is ready):
-    final apiService = ref.read(authApiServiceProvider);
-    final token = await apiService.login(email: email, password: password);
-    await login(token);
-    */
   }
 
-  // --- MOCKED GOOGLE LOGIN FOR DEMO ---
-  Future<void> loginWithGoogle() async {
-    await Future.delayed(const Duration(milliseconds: 1000));
-    const mockToken = 'google_demo_jwt_token_987654321';
-    await login(mockToken);
-  }
-
-  // --- MOCKED SIGNUP METHOD FOR DEMO ---
   Future<void> signUp({
     required String name,
     required String email,
     required String password,
   }) async {
-    // 1. Simulate network delay (1.2 seconds)
-    await Future.delayed(const Duration(milliseconds: 1200));
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final uid = await _authRepo.signUp(
+        name: name,
+        email: email,
+        password: password,
+      );
+      try {
+        await _userRepo.createIfMissing(
+          uid: uid,
+          name: name,
+          email: email.trim(),
+        );
+      } catch (e) {
+        debugPrint('createIfMissing failed (non-fatal): $e');
+      }
+      state = state.copyWith(isLoading: false, isLoggedIn: true);
+    } catch (e) {
+      final msg = _friendlyAuthError(e);
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+      throw Exception(msg);
+    }
+  }
 
-    // 2. Save dummy token and log in directly upon registration
-    const mockToken = 'demo_signup_jwt_token_456789';
-    await login(mockToken);
+  Future<void> loginWithGoogle() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final uid = await _authRepo.signInWithGoogle();
+      try {
+        await _userRepo.createIfMissing(
+          uid: uid,
+          name: _authRepo.currentFirebaseUser?.displayName ?? '',
+          email: _authRepo.currentFirebaseUser?.email ?? '',
+        );
+      } catch (e) {
+        debugPrint('createIfMissing failed (non-fatal): $e');
+      }
+      state = state.copyWith(isLoading: false, isLoggedIn: true);
+    } catch (e) {
+      final msg = _friendlyAuthError(e);
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+      throw Exception(msg);
+    }
+  }
 
-    /* 
-    // REAL API IMPLEMENTATION (Uncomment when backend is ready):
-    final apiService = ref.read(authApiServiceProvider);
-    final token = await apiService.signUp(name: name, email: email, password: password);
-    await login(token);
-    */
+  Future<void> logout() async {
+    await _authRepo.logout();
+    state = state.copyWith(isLoggedIn: false, clearError: true);
   }
 }
 
-final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {
-  return AuthNotifier();
+// -----------------------------------------------------------------------------
+// Friendly error messages — Firebase codes are ugly for end users.
+// -----------------------------------------------------------------------------
+String _friendlyAuthError(Object e) {
+  if (e is FirebaseAuthException) {
+    switch (e.code) {
+      case 'user-not-found':
+        return 'No account found for that email.';
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Incorrect email or password.';
+      case 'email-already-in-use':
+        return 'That email is already registered.';
+      case 'weak-password':
+        return 'Password must be at least 6 characters.';
+      case 'invalid-email':
+        return 'Please enter a valid email.';
+      case 'network-request-failed':
+        return 'Network error. Check your connection.';
+      case 'too-many-requests':
+        return 'Too many attempts. Try again later.';
+      default:
+        return e.message ?? 'Something went wrong.';
+    }
+  }
+  if (e is UnsupportedError) {
+    return e.message ?? 'Google sign-in is not available yet.';
+  }
+  return e.toString().replaceAll('Exception: ', '');
+}
+
+// -----------------------------------------------------------------------------
+// Provider
+// -----------------------------------------------------------------------------
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  return AuthNotifier(
+    ref.watch(authRepositoryProvider),
+    ref.watch(userRepositoryProvider),
+    ref.watch(storageServiceProvider),
+  );
 });

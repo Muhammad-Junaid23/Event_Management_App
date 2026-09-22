@@ -66,12 +66,9 @@ class AppRoutes {
         parentNavigatorKey: _rootNavigatorKey,
         path: groupProfile,
         builder: (context, state) {
-          // Extract the map passed via `extra` during context.push()
           final args = state.extra as Map<String, dynamic>?;
-          final groupName =
-              args?['groupName'] ?? 'Business group'; // Fallback default name
-
-          return GroupProfileScreen(groupName: groupName);
+          final groupId = args?['groupId'] as String? ?? 'grp_1';
+          return GroupProfileScreen(groupId: groupId);
         },
       ),
       GoRoute(

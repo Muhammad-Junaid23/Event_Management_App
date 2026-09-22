@@ -69,6 +69,20 @@ class GroupRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
+
+  Future<GroupMembership> getMembership(String uid, String groupId) async {
+    final snap = await _db
+        .collection(FirestorePaths.userMemberships(uid))
+        .doc(groupId)
+        .get();
+    if (!snap.exists) return GroupMembership.none;
+    return GroupMembership(
+      joined: true,
+      muted: snap.data()?['muted'] as bool? ?? false,
+    );
+  }
+
+  
 }
 
 final groupRepositoryProvider = Provider<GroupRepository>((ref) {

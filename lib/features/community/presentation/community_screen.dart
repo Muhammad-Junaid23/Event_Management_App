@@ -108,7 +108,7 @@ class CommunityScreen extends ConsumerWidget {
           InkWell(
             onTap: () => context.push(
               AppRoutes.groupProfile,
-              extra: {'groupName': 'Business group'},
+              extra: {'groupId': 'grp_1'},
             ),
             child: Row(
               children: [
@@ -139,7 +139,10 @@ class CommunityScreen extends ConsumerWidget {
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () => context.push(AppRoutes.groupProfile),
+             onPressed: () => context.push(
+              AppRoutes.groupProfile,
+              extra: {'groupId': 'grp_1'},
+            ),
           ),
         ],
       ),

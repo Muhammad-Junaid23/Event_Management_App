@@ -1,6 +1,16 @@
 import 'package:event_management_system/features/home/models/event_model.dart';
 import 'package:event_management_system/core/utils/json_utils.dart';
 
+/// User-specific state for a group. Lives in `users/{uid}/memberships/{groupId}`.
+class GroupMembership {
+  final bool joined;
+  final bool muted;
+
+  const GroupMembership({this.joined = false, this.muted = false});
+
+  static const GroupMembership none = GroupMembership();
+}
+
 class GroupProfileState {
   final String groupId;
   final String name;

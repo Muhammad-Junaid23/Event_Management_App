@@ -10,35 +10,44 @@ class StorageRepository {
 
   final FirebaseStorage _storage;
 
-  /// Uploads bytes and returns the public download URL.
   Future<String> _upload({
     required String folder,
     required String userId,
     required Uint8List bytes,
     required String fileName,
+    String contentType = 'image/jpeg',
+    void Function(double progress)? onProgress,
   }) async {
     final safeName = fileName.replaceAll(RegExp(r'[^\w.\-]'), '_');
     final stamp = DateTime.now().millisecondsSinceEpoch;
     final ref = _storage.ref('$folder/$userId/${stamp}_$safeName');
 
-    final task = await ref.putData(
-      bytes,
-      SettableMetadata(contentType: 'image/jpeg'),
-    );
+    final task = ref.putData(bytes, SettableMetadata(contentType: contentType));
 
-    return task.ref.getDownloadURL();
+    if (onProgress != null) {
+      task.snapshotEvents.listen((snap) {
+        if (snap.totalBytes > 0) {
+          onProgress(snap.bytesTransferred / snap.totalBytes);
+        }
+      });
+    }
+
+    final done = await task;
+    return done.ref.getDownloadURL();
   }
 
   Future<String> uploadEventImage({
     required String userId,
     required Uint8List bytes,
     required String fileName,
+    void Function(double progress)? onProgress,
   }) {
     return _upload(
       folder: 'events',
       userId: userId,
       bytes: bytes,
       fileName: fileName,
+      onProgress: onProgress,
     );
   }
 
@@ -46,12 +55,14 @@ class StorageRepository {
     required String userId,
     required Uint8List bytes,
     required String fileName,
+    void Function(double progress)? onProgress,
   }) {
     return _upload(
       folder: 'polls',
       userId: userId,
       bytes: bytes,
       fileName: fileName,
+      onProgress: onProgress,
     );
   }
 
@@ -59,22 +70,24 @@ class StorageRepository {
     required String userId,
     required Uint8List bytes,
     required String fileName,
+    void Function(double progress)? onProgress,
   }) {
     return _upload(
       folder: 'avatars',
       userId: userId,
       bytes: bytes,
       fileName: fileName,
+      onProgress: onProgress,
     );
   }
 
-  /// Best-effort delete. Fails silently if the URL is not a Storage URL.
+  /// Best-effort delete. Ignores failures (external URLs, already gone).
   Future<void> deleteByUrl(String url) async {
     if (!url.startsWith('http')) return;
     try {
       await _storage.refFromURL(url).delete();
     } catch (_) {
-      // ignore — may be an external URL or already deleted
+      // ignore
     }
   }
 }

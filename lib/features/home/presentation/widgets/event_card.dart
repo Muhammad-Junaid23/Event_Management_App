@@ -78,7 +78,7 @@ class EventCard extends ConsumerWidget {
                         : AppColors.textCardSubtitle,
                   ),
                   onPressed: () {
-                    ref.read(eventProvider.notifier).toggleFavorite(event.id);
+                    ref.read(eventActionsProvider).toggleFavorite(event.id);
                   },
                 ),
               ],

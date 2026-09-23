@@ -97,11 +97,13 @@ class GroupProfileScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Events filtering still runs against the mock event provider.
-    // In Phase 5d this changes to a groupId query.
-    final eventState = ref.watch(eventProvider);
-    final groupEvents = eventState.allEvents
-        .where((e) => e.group.toLowerCase() == groupProfile.name.toLowerCase())
-        .toList();
+    final groupEvents =
+        ref
+            .watch(eventsWithFavoriteProvider)
+            .value
+            ?.where((e) => e.group == groupProfile.groupId)
+            .toList() ??
+        const [];
 
     return Stack(
       clipBehavior: Clip.none,
@@ -225,9 +227,7 @@ class GroupProfileScreen extends ConsumerWidget {
                       imagePath: event.imageUrl,
                       isFavorite: event.isFavorite,
                       onFavoriteTap: () {
-                        ref
-                            .read(eventProvider.notifier)
-                            .toggleFavorite(event.id);
+                        ref.read(eventActionsProvider).toggleFavorite(event.id);
                       },
                       actionButton: SizedBox(
                         width: double.infinity,

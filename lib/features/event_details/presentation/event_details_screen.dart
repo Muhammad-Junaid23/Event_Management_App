@@ -17,19 +17,27 @@ class EventDetailsScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Fetch the live model directly from provider state using eventId
-    final eventState = ref.watch(eventProvider);
-    final eventIndex = eventState.allEvents.indexWhere((e) => e.id == eventId);
+    final eventsAsync = ref.watch(eventsWithFavoriteProvider);
 
-    // Guard if event isn't found
-    if (eventIndex == -1) {
+    final event = eventsAsync.maybeWhen(
+      data: (events) {
+        final idx = events.indexWhere((e) => e.id == eventId);
+        return idx == -1 ? null : events[idx];
+      },
+      orElse: () => null,
+    );
+
+    if (eventsAsync.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (event == null) {
       return Scaffold(
         appBar: AppBar(),
         body: const Center(child: Text('Event not found')),
       );
     }
 
-    final event = eventState.allEvents[eventIndex];
     final formattedDate = DateFormat('EEE, d MMM yyyy, h:mm a')
         .format(event.dateTime);
 
@@ -81,7 +89,7 @@ class EventDetailsScreen extends ConsumerWidget {
                                 ),
                                 onPressed: () {
                                   ref
-                                      .read(eventProvider.notifier)
+                                      .read(eventActionsProvider)
                                       .toggleFavorite(event.id);
                                 },
                               ),

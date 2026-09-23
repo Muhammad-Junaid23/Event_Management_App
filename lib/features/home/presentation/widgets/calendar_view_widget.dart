@@ -23,15 +23,15 @@ class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // 1. Read state & events directly from Riverpod
-    final eventState = ref.watch(eventProvider);
-    final eventsForSelectedDay = ref.watch(selectedDateEventsProvider);
+    final filteredAsync = ref.watch(filteredEventsProvider(EventFilterScope.home));
+    final selectedDate = ref.watch(selectedDateProvider);
+    final eventsForSelectedDayAsync = ref.watch(selectedDateEventsProvider);
+    final allFilteredEvents = filteredAsync.value ?? const <EventModel>[];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          // Header Controls (Month & Year display with Chevrons)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Row(
@@ -41,14 +41,12 @@ class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
                   icon: Icons.chevron_left,
                   isDark: isDark,
                   theme: theme,
-                  onTap: () {
-                    setState(() {
-                      _focusedDay = DateTime(
-                        _focusedDay.year,
-                        _focusedDay.month - 1,
-                      );
-                    });
-                  },
+                  onTap: () => setState(() {
+                    _focusedDay = DateTime(
+                      _focusedDay.year,
+                      _focusedDay.month - 1,
+                    );
+                  }),
                 ),
                 Column(
                   children: [
@@ -73,47 +71,38 @@ class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
                   icon: Icons.chevron_right,
                   isDark: isDark,
                   theme: theme,
-                  onTap: () {
-                    setState(() {
-                      _focusedDay = DateTime(
-                        _focusedDay.year,
-                        _focusedDay.month + 1,
-                      );
-                    });
-                  },
+                  onTap: () => setState(() {
+                    _focusedDay = DateTime(
+                      _focusedDay.year,
+                      _focusedDay.month + 1,
+                    );
+                  }),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-
-          // Table Calendar
           TableCalendar<EventModel>(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: _focusedDay,
             startingDayOfWeek: StartingDayOfWeek.monday,
             headerVisible: false,
-
-            // Sync selected date with Riverpod
-            selectedDayPredicate: (day) =>
-                isSameDay(eventState.selectedDate, day),
-
-            // Fetch actual events from Riverpod state per day
+            selectedDayPredicate: (day) => isSameDay(selectedDate, day),
             eventLoader: (day) {
-              return ref.read(eventProvider).getEventsForDay(day);
+              return allFilteredEvents.where((e) {
+                return e.dateTime.year == day.year &&
+                    e.dateTime.month == day.month &&
+                    e.dateTime.day == day.day;
+              }).toList();
             },
-
-            // Handle day tap: update Riverpod state
             onDaySelected: (selectedDay, focusedDay) {
-              ref.read(eventProvider.notifier).setSelectedDate(selectedDay);
+              ref.read(selectedDateProvider.notifier).set(selectedDay);
               setState(() => _focusedDay = focusedDay);
             },
-
             onPageChanged: (focusedDay) {
               setState(() => _focusedDay = focusedDay);
             },
-
             daysOfWeekStyle: const DaysOfWeekStyle(
               weekdayStyle: TextStyle(
                 fontSize: 13,
@@ -126,12 +115,11 @@ class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
                 color: AppColors.textCardSubtitle,
               ),
             ),
-
             calendarStyle: CalendarStyle(
               outsideDaysVisible: true,
               outsideTextStyle: TextStyle(
                 fontSize: 14,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
               ),
               defaultTextStyle: TextStyle(
                 fontSize: 14,
@@ -146,12 +134,10 @@ class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
                 shape: BoxShape.circle,
               ),
               todayDecoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
+                color: AppColors.primary.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
             ),
-
-            // Custom ring markers matching your design styling
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, day, dayEvents) {
                 if (dayEvents.isEmpty) return const SizedBox();
@@ -180,44 +166,56 @@ class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
               },
             ),
           ),
-
           const SizedBox(height: 12),
           Divider(
             color: isDark ? AppColors.darkBorderInput : AppColors.borderDivider,
             thickness: 0.5,
           ),
           const SizedBox(height: 16),
-
-          // Events list for selected day / Empty state handling
-          if (eventsForSelectedDay.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32.0),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.event_busy,
-                    size: 48,
-                    color: AppColors.textCardSubtitle,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'No events found for this date',
-                    style: TextStyle(
-                      color: AppColors.textCardSubtitle,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            ...eventsForSelectedDay.map(
-              (event) => Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: EventCard(event: event),
-              ),
+          eventsForSelectedDayAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
             ),
-
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Text('Failed to load events: $e'),
+            ),
+            data: (eventsForSelectedDay) {
+              if (eventsForSelectedDay.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32.0),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.event_busy,
+                        size: 48,
+                        color: AppColors.textCardSubtitle,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'No events found for this date',
+                        style: TextStyle(
+                          color: AppColors.textCardSubtitle,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return Column(
+                children: eventsForSelectedDay
+                    .map(
+                      (event) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: EventCard(event: event),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
           const SizedBox(height: 20),
         ],
       ),

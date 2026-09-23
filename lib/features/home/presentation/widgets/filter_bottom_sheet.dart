@@ -5,9 +5,9 @@ import '../../providers/event_provider.dart';
 import '../../../../app/constants/app_colors.dart';
 
 class FilterBottomSheet extends ConsumerStatefulWidget {
-  final StateNotifierProvider<EventNotifier, EventState>? provider;
+  final EventFilterScope scope;
 
-  const FilterBottomSheet({super.key, this.provider});
+  const FilterBottomSheet({super.key, required this.scope});
 
   @override
   ConsumerState<FilterBottomSheet> createState() => _FilterBottomSheetState();
@@ -18,9 +18,6 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
   String? selectedState;
   String? selectedGroup;
   String? selectedCategory;
-
-  StateNotifierProvider<EventNotifier, EventState> get _targetProvider =>
-      widget.provider ?? eventProvider;
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Religious', 'icon': Icons.nightlight_round},
@@ -33,11 +30,11 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
   @override
   void initState() {
     super.initState();
-    final currentState = ref.read(_targetProvider);
-    selectedCity = currentState.selectedCity;
-    selectedState = currentState.selectedState;
-    selectedGroup = currentState.selectedGroup;
-    selectedCategory = currentState.selectedCategory;
+    final f = ref.read(eventFiltersProvider(widget.scope));
+    selectedCity = f.city;
+    selectedState = f.state;
+    selectedGroup = f.group;
+    selectedCategory = f.category;
   }
 
   @override
@@ -81,12 +78,11 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
                 ],
               ),
               const SizedBox(height: 16),
-
               _buildDropdownLabel('City', theme),
               _buildDropdown(
                 hint: 'Select City',
                 value: selectedCity,
-                items: [
+                items: const [
                   'New York',
                   'Mesa',
                   'Los Angeles',
@@ -98,23 +94,21 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
-
               _buildDropdownLabel('State', theme),
               _buildDropdown(
                 hint: 'Select State',
                 value: selectedState,
-                items: ['New Jersey', 'New York', 'California'],
+                items: const ['New Jersey', 'New York', 'California'],
                 onChanged: (val) => setState(() => selectedState = val),
                 theme: theme,
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
-
               _buildDropdownLabel('Groups', theme),
               _buildDropdown(
                 hint: 'Group',
                 value: selectedGroup,
-                items: [
+                items: const [
                   'Group A',
                   'Group B',
                   'Tech Group',
@@ -127,18 +121,15 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
                 isDark: isDark,
               ),
               const SizedBox(height: 20),
-
               Wrap(
                 spacing: 8,
                 runSpacing: 10,
                 children: categories.map((cat) {
                   final isSelected = selectedCategory == cat['name'];
                   return InkWell(
-                    onTap: () {
-                      setState(() {
-                        selectedCategory = isSelected ? null : cat['name'];
-                      });
-                    },
+                    onTap: () => setState(() {
+                      selectedCategory = isSelected ? null : cat['name'];
+                    }),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -186,7 +177,6 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
                 }).toList(),
               ),
               const SizedBox(height: 24),
-
               Row(
                 children: [
                   Expanded(
@@ -194,7 +184,9 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
                       height: 52,
                       child: OutlinedButton(
                         onPressed: () {
-                          ref.read(_targetProvider.notifier).clearFilters();
+                          ref
+                              .read(eventFiltersProvider(widget.scope).notifier)
+                              .clear();
                           Navigator.pop(context);
                         },
                         style: OutlinedButton.styleFrom(
@@ -225,10 +217,10 @@ class _FilterBottomSheetState extends ConsumerState<FilterBottomSheet> {
                       child: ElevatedButton(
                         onPressed: () {
                           ref
-                              .read(_targetProvider.notifier)
-                              .applyFilters(
+                              .read(eventFiltersProvider(widget.scope).notifier)
+                              .setFilters(
                                 city: selectedCity,
-                                state: selectedState,
+                                stateValue: selectedState,
                                 group: selectedGroup,
                                 category: selectedCategory,
                               );

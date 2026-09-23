@@ -23,7 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       useRootNavigator: true,
       barrierDismissible: true,
-      builder: (context) => const FilterBottomSheet(),
+      builder: (context) => const FilterBottomSheet(scope: EventFilterScope.home),
     );
   }
 
@@ -111,34 +111,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 child: _selectedView == 0
                     ? const CalendarViewWidget()
-                    : Builder(
-                        builder: (context) {
-                          final events = ref.watch(filteredEventsProvider);
-
-                          if (events.isEmpty) {
-                            return Center(
-                              child: Text(
-                                'No matching events found',
-                                style: TextStyle(
-                                  color: AppColors.textCardSubtitle,
-                                ),
-                              ),
-                            );
-                          }
-
-                          return ListView.separated(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 8,
+                    : ref
+                          .watch(filteredEventsProvider(EventFilterScope.home))
+                          .when(
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(),
                             ),
-                            itemCount: events.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (context, index) =>
-                                EventCard(event: events[index]),
-                          );
-                        },
-                      ),
+                            error: (e, _) => Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text('Failed to load events: $e'),
+                              ),
+                            ),
+                            data: (events) {
+                              if (events.isEmpty) {
+                                return const Center(
+                                  child: Text(
+                                    'No matching events found',
+                                    style: TextStyle(
+                                      color: AppColors.textCardSubtitle,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return ListView.separated(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 8,
+                                ),
+                                itemCount: events.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 12),
+                                itemBuilder: (context, index) =>
+                                    EventCard(event: events[index]),
+                              );
+                            },
+                          ),
               ),
             ],
           ),

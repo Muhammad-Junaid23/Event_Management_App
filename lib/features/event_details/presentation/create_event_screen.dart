@@ -1,12 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:event_management_system/features/home/models/event_model.dart';
 import 'package:event_management_system/features/home/providers/event_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
+import 'package:event_management_system/core/services/image_upload_service.dart';
+import 'package:event_management_system/features/home/models/event_dto.dart';
 
 class CreateEventScreen extends ConsumerStatefulWidget {
   const CreateEventScreen({super.key});
@@ -30,6 +31,30 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   bool _isLoading = false; // Added state declaration
 
   final ImagePicker _picker = ImagePicker();
+
+  String? _selectedCity;
+  String? _selectedState;
+  String? _selectedCategory;
+  String _selectedGroupId = 'grp_1';
+
+  static const _cities = [
+    'New York',
+    'Mesa',
+    'Los Angeles',
+    'San Francisco',
+    'Austin',
+  ];
+  static const _states = ['New Jersey', 'New York', 'California'];
+  static const _categories = [
+    'Religious',
+    'Business',
+    'Sports',
+    'Education',
+    'Community',
+  ];
+  static const _groups = [
+    {'id': 'grp_1', 'name': 'Business group'},
+  ];
 
   @override
   void dispose() {
@@ -79,11 +104,21 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
-
     if (_selectedDate == null || _selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a valid date and time')),
+      );
+      return;
+    }
+    if (_selectedCity == null ||
+        _selectedState == null ||
+        _selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select city, state, and category'),
+        ),
       );
       return;
     }
@@ -99,31 +134,38 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     );
 
     try {
-      final newEvent = EventModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      // 1. Upload image (if any) to Cloudinary via the service.
+      final imageUrl = await ref
+          .read(imageUploadServiceProvider)
+          .uploadOrKeep(file: _selectedImage, bucket: ImageBucket.event);
+
+      // 2. Create event doc in Firestore.
+      final req = CreateEventRequest(
         title: _titleController.text.trim(),
         description: _detailController.text.trim(),
         dateTime: eventDateTime,
         location: _locationController.text.trim(),
-        city: 'Default City',
-        state: 'Default State',
-        category: 'Business',
-        group: 'General',
-        imageUrl: _selectedImage?.path ?? 'assets/images/featuresCard.png',
+        city: _selectedCity ?? 'Unknown',
+        state: _selectedState ?? 'Unknown',
+        category: _selectedCategory ?? 'Business',
+        groupId: _selectedGroupId,
       );
 
-      await ref.read(eventProvider.notifier).addEvent(newEvent);
+      await ref
+          .read(eventActionsProvider)
+          .create(req, imageUrl: imageUrl.isNotEmpty ? imageUrl : null);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Event Created Successfully')),
+          const SnackBar(content: Text('Event created successfully')),
         );
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error creating event: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to create event: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -208,6 +250,53 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                     ? 'Location is required'
                     : null,
               ),
+              const SizedBox(height: 16),
+              _buildLabel('City'),
+              _buildDropdown<String>(
+                value: _selectedCity,
+                hint: 'Select city',
+                items: _cities
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedCity = v),
+              ),
+              const SizedBox(height: 16),
+              _buildLabel('State'),
+              _buildDropdown<String>(
+                value: _selectedState,
+                hint: 'Select state',
+                items: _states
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedState = v),
+              ),
+              const SizedBox(height: 16),
+              _buildLabel('Category'),
+              _buildDropdown<String>(
+                value: _selectedCategory,
+                hint: 'Select category',
+                items: _categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedCategory = v),
+              ),
+              const SizedBox(height: 16),
+              _buildLabel('Group'),
+              _buildDropdown<String>(
+                value: _selectedGroupId,
+                hint: 'Select group',
+                items: _groups
+                    .map(
+                      (g) => DropdownMenuItem(
+                        value: g['id'],
+                        child: Text(g['name']!),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) =>
+                    setState(() => _selectedGroupId = v ?? 'grp_1'),
+              ),
+
               const SizedBox(height: 16),
               _buildLabel('Event Detail'),
               _buildTextField(
@@ -296,6 +385,34 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
           vertical: 12,
         ),
       ),
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required T? value,
+    required String hint,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return DropdownButtonFormField<T>(
+      initialValue: value,
+      isExpanded: true,
+      hint: Text(
+        hint,
+        style: const TextStyle(color: AppColors.textVote, fontSize: 13),
+      ),
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.borderInput),
+        ),
+      ),
+      items: items,
+      onChanged: onChanged,
     );
   }
 

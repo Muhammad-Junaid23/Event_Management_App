@@ -67,6 +67,13 @@ class UserRepository {
       tx.set(ref, {'favoriteEventIds': updated}, SetOptions(merge: true));
     });
   }
+
+  Stream<List<String>> watchFavoriteIds(String uid) {
+    return _ref(uid).snapshots().map((snap) {
+      final raw = snap.data()?['favoriteEventIds'];
+      return raw is List ? raw.cast<String>() : const <String>[];
+    });
+  }
 }
 
 final userRepositoryProvider = Provider<UserRepository>((ref) {

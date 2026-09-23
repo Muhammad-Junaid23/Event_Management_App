@@ -36,6 +36,21 @@ class CommunityScreen extends ConsumerWidget {
                       const Center(child: CircularProgressIndicator()),
                   error: (err, stack) => Center(child: Text('Error: $err')),
                   data: (polls) {
+                      if (polls.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Text(
+                            'No polls yet.\nTap "Vote" to create one.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textCardSubtitle,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
                     return ListView.separated(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -57,10 +72,18 @@ class CommunityScreen extends ConsumerWidget {
                               : AppAssets.featuresCard,
                           timeAgo: '12hr ago',
                           isDark: isDark,
-                          onOptionSelected: (selectedOptionId) {
-                            ref
-                                .read(communityPollsProvider.notifier)
-                                .voteOption(poll.id, selectedOptionId);
+                          onOptionSelected: (selectedOptionId) async {
+                            try {
+                              await ref
+                                  .read(communityPollsActionsProvider)
+                                  .vote(poll.id, selectedOptionId);
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Vote failed: $e')),
+                                );
+                              }
+                            }
                           },
                         );
                       },
@@ -139,7 +162,7 @@ class CommunityScreen extends ConsumerWidget {
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
-             onPressed: () => context.push(
+            onPressed: () => context.push(
               AppRoutes.groupProfile,
               extra: {'groupId': 'grp_1'},
             ),

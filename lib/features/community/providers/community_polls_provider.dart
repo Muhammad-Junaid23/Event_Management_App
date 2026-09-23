@@ -1,71 +1,81 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:event_management_system/core/repositories/poll_repository.dart';
+import 'package:event_management_system/features/auth/providers/auth_provider.dart';
 import 'package:event_management_system/features/community/models/community_poll_model.dart';
+import 'package:event_management_system/features/community/models/poll_dto.dart';
 
-class CommunityPollsNotifier
-    extends StateNotifier<AsyncValue<List<PollModel>>> {
-  CommunityPollsNotifier() : super(const AsyncValue.loading()) {
-    fetchPolls();
-  }
+// -----------------------------------------------------------------------------
+// Raw streams
+// -----------------------------------------------------------------------------
+final _pollsStreamProvider = StreamProvider.autoDispose<List<PollModel>>((ref) {
+  return ref.watch(pollRepositoryProvider).watchAll();
+});
 
-  Future<void> fetchPolls() async {
-    state = const AsyncValue.loading();
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
+final _userPollVotesProvider =
+    StreamProvider.autoDispose<Map<String, String>>((ref) {
+  final uid = ref.watch(currentUidProvider);
+  if (uid == null) return Stream.value(const {});
+  return ref.watch(pollRepositoryProvider).watchUserVotes(uid);
+});
 
-      final mockPolls = [
-        PollModel(
-          id: 'poll_1',
-          question: 'Which framework feature are you most excited for in 2026?',
-          options: [
-            PollOption(
-              id: 'opt_1',
-              text: 'Impeller Engine Enhancements',
-              votes: 42,
-            ),
-            PollOption(id: 'opt_2', text: 'Wasm Web Performance', votes: 28),
-          ],
-        ),
-      ];
-      state = AsyncValue.data(mockPolls);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
-  }
-
-  /// Add a new poll to the state
-  Future<void> addPoll(PollModel newPoll) async {
-    final currentPolls = state.value ?? [];
-    state = AsyncValue.data([newPoll, ...currentPolls]);
-  }
-
-  Future<void> voteOption(String pollId, String optionId) async {
-    final currentPolls = state.value;
-    if (currentPolls == null) return;
-
-    state = AsyncValue.data(
-      currentPolls.map((poll) {
-        if (poll.id != pollId) return poll;
-        if (poll.userVotedOptionId == optionId) return poll;
-
-        final updatedOptions = poll.options.map((opt) {
-          if (opt.id == optionId) {
-            return opt.copyWith(votes: opt.votes + 1);
-          } else if (opt.id == poll.userVotedOptionId) {
-            return opt.copyWith(votes: (opt.votes - 1).clamp(0, 999999));
-          }
-          return opt;
-        }).toList();
-
-        return poll.copyWith(
-          options: updatedOptions,
-          userVotedOptionId: optionId,
-        );
-      }).toList(),
-    );
-  }
+// -----------------------------------------------------------------------------
+// Merged provider — polls + user's votes → PollModel with userVotedOptionId set
+// -----------------------------------------------------------------------------
+List<PollModel> _merge(List<PollModel> polls, Map<String, String> votes) {
+  if (votes.isEmpty) return polls;
+  return polls.map((poll) {
+    final votedOptionId = votes[poll.id];
+    if (votedOptionId == null) return poll;
+    return poll.copyWith(userVotedOptionId: votedOptionId);
+  }).toList();
 }
 
 final communityPollsProvider =
-    StateNotifierProvider<CommunityPollsNotifier, AsyncValue<List<PollModel>>>(
-      (ref) => CommunityPollsNotifier(),
-    );
+    Provider.autoDispose<AsyncValue<List<PollModel>>>((ref) {
+  final pollsAsync = ref.watch(_pollsStreamProvider);
+  final votesAsync = ref.watch(_userPollVotesProvider);
+
+  // If polls errored, show that. If polls loading, show loading.
+  if (pollsAsync.hasError) {
+    return AsyncValue.error(pollsAsync.error!, pollsAsync.stackTrace!);
+  }
+  if (pollsAsync.isLoading) return const AsyncValue.loading();
+
+  final polls = pollsAsync.value ?? const <PollModel>[];
+
+  // Votes are secondary — if they're still loading, show polls without merge.
+  final votes = votesAsync.value ?? const <String, String>{};
+  return AsyncValue.data(_merge(polls, votes));
+});
+
+// -----------------------------------------------------------------------------
+// Actions (create, vote)
+// -----------------------------------------------------------------------------
+class CommunityPollsActions {
+  CommunityPollsActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> create(CreatePollRequest req, {String? imageUrl}) async {
+    await _ref
+        .read(pollRepositoryProvider)
+        .create(req, imageUrl: imageUrl);
+  }
+
+  Future<void> vote(String pollId, String optionId) async {
+    final uid = _ref.read(currentUidProvider);
+    if (uid == null) {
+      throw StateError('Sign in required to vote.');
+    }
+    await _ref.read(pollRepositoryProvider).vote(
+          uid: uid,
+          req: VoteRequest(pollId: pollId, optionId: optionId),
+        );
+  }
+}
+
+final communityPollsActionsProvider =
+    Provider.autoDispose<CommunityPollsActions>((ref) {
+  return CommunityPollsActions(ref);
+});

@@ -17,6 +17,10 @@ class FirestorePaths {
   static const String notifications =
       'notifications'; // users/{uid}/notifications/{notifId}
 
+  static const String pollVotes = 'pollVotes';
+
+  static String userPollVotes(String uid) => '${userDoc(uid)}/$pollVotes';
+
   // Helpers
   static String userDoc(String uid) => '$users/$uid';
   static String eventDoc(String id) => '$events/$id';

@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:event_management_system/features/community/models/community_poll_model.dart';
-import 'package:event_management_system/features/community/providers/community_polls_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'package:event_management_system/app/constants/app_colors.dart';
+import 'package:event_management_system/core/services/image_upload_service.dart';
+import 'package:event_management_system/features/community/models/poll_dto.dart';
+import 'package:event_management_system/features/community/providers/community_polls_provider.dart';
 
 class CreateVoteScreen extends ConsumerStatefulWidget {
   const CreateVoteScreen({super.key});
@@ -17,7 +19,7 @@ class CreateVoteScreen extends ConsumerStatefulWidget {
 
 class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _questionController = TextEditingController();
+  final _questionController = TextEditingController();
   final List<TextEditingController> _optionControllers = [
     TextEditingController(),
     TextEditingController(),
@@ -25,35 +27,37 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
 
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
-  bool _isLoading = false; // Added state declaration
+  bool _isSubmitting = false;
+  double? _uploadProgress;
 
   @override
   void dispose() {
     _questionController.dispose();
-    for (var controller in _optionControllers) {
-      controller.dispose();
+    for (final c in _optionControllers) {
+      c.dispose();
     }
     super.dispose();
   }
 
   void _addOption() {
     if (_optionControllers.length < 6) {
-      setState(() {
-        _optionControllers.add(TextEditingController());
-      });
+      setState(() => _optionControllers.add(TextEditingController()));
     }
   }
 
   void _removeOption(int index) {
     if (_optionControllers.length > 2) {
-      final controller = _optionControllers.removeAt(index);
-      controller.dispose();
+      final c = _optionControllers.removeAt(index);
+      c.dispose();
       setState(() {});
     }
   }
 
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
     if (!mounted) return;
     if (image != null) {
       setState(() => _selectedImage = image);
@@ -61,43 +65,55 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
   }
 
   Future<void> _submitVote() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isSubmitting = true;
+      _uploadProgress = null;
+    });
 
     try {
-      final newPoll = PollModel(
-        id: 'poll_${DateTime.now().millisecondsSinceEpoch}',
+      // 1. Upload image (if any) to Firebase Storage.
+      final imageUrl = await ref
+          .read(imageUploadServiceProvider)
+          .uploadOrKeep(
+            file: _selectedImage,
+            bucket: ImageBucket.poll,
+            onProgress: (p) {
+              if (mounted) setState(() => _uploadProgress = p);
+            },
+          );
+
+      // 2. Create poll doc in Firestore.
+      final req = CreatePollRequest(
         question: _questionController.text.trim(),
-        imageUrl: _selectedImage?.path,
-        options: _optionControllers
-            .asMap()
-            .entries
-            .map(
-              (e) => PollOption(
-                id: 'opt_${e.key}_${DateTime.now().millisecondsSinceEpoch}',
-                text: e.value.text.trim(),
-                votes: 0,
-              ),
-            )
-            .toList(),
+        options: _optionControllers.map((c) => c.text.trim()).toList(),
+        groupId: 'grp_1', // TODO: replace with the selected group's ID
       );
 
-      await ref.read(communityPollsProvider.notifier).addPoll(newPoll);
+      await ref
+          .read(communityPollsActionsProvider)
+          .create(req, imageUrl: imageUrl.isNotEmpty ? imageUrl : null);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Poll Created Successfully')),
+          const SnackBar(content: Text('Poll created successfully')),
         );
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error creating poll: $e')));
+            .showSnackBar(SnackBar(content: Text('Failed to create poll: $e')));
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _uploadProgress = null;
+        });
+      }
     }
   }
 
@@ -169,7 +185,7 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _optionControllers.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   return TextFormField(
                     key: ObjectKey(_optionControllers[index]),
@@ -211,7 +227,7 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
               ),
               const SizedBox(height: 6),
               GestureDetector(
-                onTap: _pickImage,
+                onTap: _isSubmitting ? null : _pickImage,
                 child: Container(
                   width: 120,
                   height: 120,
@@ -251,19 +267,28 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
                         ),
                 ),
               ),
+              if (_uploadProgress != null && _uploadProgress! < 1.0) ...[
+                const SizedBox(height: 12),
+                LinearProgressIndicator(value: _uploadProgress),
+                const SizedBox(height: 4),
+                Text(
+                  'Uploading image: ${(_uploadProgress! * 100).toStringAsFixed(0)}%',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submitVote,
+                  onPressed: _isSubmitting ? null : _submitVote,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: _isLoading
+                  child: _isSubmitting
                       ? const SizedBox(
                           height: 20,
                           width: 20,

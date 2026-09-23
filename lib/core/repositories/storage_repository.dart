@@ -1,39 +1,60 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
-import 'package:event_management_system/core/providers/firebase_providers.dart';
+/// Cloudinary credentials — set these from the Cloudinary Console.
+/// Find them under Dashboard → Product Environment Credentials.
+class CloudinaryConfig {
+  static const String cloudName = 'dsxhrelpu';
+  static const String uploadPreset = 'eventManagementApp';
+}
 
 class StorageRepository {
-  StorageRepository(this._storage);
-
-  final FirebaseStorage _storage;
+  StorageRepository();
 
   Future<String> _upload({
     required String folder,
     required String userId,
     required Uint8List bytes,
     required String fileName,
-    String contentType = 'image/jpeg',
     void Function(double progress)? onProgress,
   }) async {
-    final safeName = fileName.replaceAll(RegExp(r'[^\w.\-]'), '_');
-    final stamp = DateTime.now().millisecondsSinceEpoch;
-    final ref = _storage.ref('$folder/$userId/${stamp}_$safeName');
+    // Cloudinary uses a single endpoint; folder is passed as a form field.
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/${CloudinaryConfig.cloudName}/image/upload',
+    );
 
-    final task = ref.putData(bytes, SettableMetadata(contentType: contentType));
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = CloudinaryConfig.uploadPreset
+      ..fields['folder'] = '$folder/$userId'
+      ..files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: fileName),
+      );
 
-    if (onProgress != null) {
-      task.snapshotEvents.listen((snap) {
-        if (snap.totalBytes > 0) {
-          onProgress(snap.bytesTransferred / snap.totalBytes);
-        }
-      });
+    // http package doesn't expose progress on MultipartRequest directly.
+    // For MVP, we report 0.0 → 1.0 around the await. If you want real progress,
+    // swap to dio (which supports onSendProgress).
+    onProgress?.call(0.0);
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Cloudinary upload failed (${response.statusCode}): ${response.body}',
+      );
     }
 
-    final done = await task;
-    return done.ref.getDownloadURL();
+    onProgress?.call(1.0);
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final url = data['secure_url'] as String?;
+    if (url == null || url.isEmpty) {
+      throw Exception('Cloudinary response missing secure_url');
+    }
+    return url;
   }
 
   Future<String> uploadEventImage({
@@ -81,17 +102,14 @@ class StorageRepository {
     );
   }
 
-  /// Best-effort delete. Ignores failures (external URLs, already gone).
+  /// Cloudinary URLs are not deletable from the client with unsigned uploads.
+  /// This becomes a no-op for now; wire signed deletion via Cloud Functions
+  /// later if needed.
   Future<void> deleteByUrl(String url) async {
-    if (!url.startsWith('http')) return;
-    try {
-      await _storage.refFromURL(url).delete();
-    } catch (_) {
-      // ignore
-    }
+    // No-op. Unsigned uploads cannot delete from the client.
   }
 }
 
 final storageRepositoryProvider = Provider<StorageRepository>((ref) {
-  return StorageRepository(ref.watch(firebaseStorageProvider));
+  return StorageRepository();
 });

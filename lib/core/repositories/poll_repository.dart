@@ -25,20 +25,34 @@ class PollRepository {
         .map((s) => s.docs.map(_fromDoc).toList());
   }
 
-  Stream<List<PollModel>> watchByGroup(String groupId) {
-    return _col
-        .where('group', isEqualTo: groupId)
-        .orderBy('createdAt', descending: true)
+  /// Stream of {pollId: optionId} for a user. Empty map if signed out.
+  Stream<Map<String, String>> watchUserVotes(String uid) {
+    return _db
+        .collection(FirestorePaths.userPollVotes(uid))
         .snapshots()
-        .map((s) => s.docs.map(_fromDoc).toList());
+        .map(
+          (snap) => {
+            for (final doc in snap.docs)
+              if ((doc.data()['optionId'] as String?)?.isNotEmpty ?? false)
+                doc.id: doc.data()['optionId'] as String,
+          },
+        );
   }
 
   Future<PollModel> create(CreatePollRequest req, {String? imageUrl}) async {
+    final stamp = DateTime.now().millisecondsSinceEpoch;
+    final options = <Map<String, dynamic>>[];
+    for (var i = 0; i < req.options.length; i++) {
+      options.add({
+        'id': 'opt_${i}_$stamp',
+        'text': req.options[i],
+        'votes': 0,
+      });
+    }
+
     final payload = <String, dynamic>{
       'question': req.question,
-      'options': req.options
-          .map((text) => {'id': '', 'text': text, 'votes': 0})
-          .toList(),
+      'options': options,
       'group': req.groupId,
       'imageUrl': imageUrl ?? '',
       'createdAt': FieldValue.serverTimestamp(),
@@ -50,10 +64,12 @@ class PollRepository {
     return _fromDoc(created);
   }
 
-  /// Atomic vote. Removes previous vote if the user changes their mind.
+  /// Atomic vote. Handles vote change and undo in one transaction.
   Future<void> vote({required String uid, required VoteRequest req}) async {
     final pollRef = _col.doc(req.pollId);
-    final voteRef = pollRef.collection('votes').doc(uid);
+    final voteRef = _db
+        .collection(FirestorePaths.userPollVotes(uid))
+        .doc(req.pollId);
 
     await _db.runTransaction((tx) async {
       final pollSnap = await tx.get(pollRef);

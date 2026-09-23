@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:event_management_system/features/auth/providers/auth_provider.dart';
-import 'package:event_management_system/features/home/providers/event_provider.dart';
 import 'package:event_management_system/features/settings/providers/notification_provider.dart';
 import 'package:event_management_system/features/community/providers/community_polls_provider.dart';
 import 'package:event_management_system/features/community/providers/group_profile_provider.dart';
@@ -174,7 +173,6 @@ class SettingsScreen extends ConsumerWidget {
                           // 2. Clear auth + reset providers
                           await ref.read(authProvider.notifier).logout();
                           ref.invalidate(userProvider);
-                          ref.invalidate(eventProvider);
                           ref.invalidate(notificationProvider);
                           ref.invalidate(communityPollsProvider);
                           ref.invalidate(groupProfileProvider);

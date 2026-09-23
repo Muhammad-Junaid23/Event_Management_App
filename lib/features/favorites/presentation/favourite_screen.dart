@@ -15,7 +15,6 @@ class FavouriteScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final favoriteEvents = ref.watch(favoriteEventsProvider);
 
     return Scaffold(
       body: Container(
@@ -47,73 +46,83 @@ class FavouriteScreen extends ConsumerWidget {
 
               // Favorites List Feed
               Expanded(
-                child: favoriteEvents.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No favorite events yet!',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.6,
-                            ),
-                          ),
+                child: ref
+                    .watch(favoriteEventsProvider)
+                    .when(
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text('Failed to load favorites: $e'),
                         ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        itemCount: favoriteEvents.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final event = favoriteEvents[index];
-                          final formattedDate = DateFormat(
-                            'EEE, d MMM yyyy, h:mm a',
-                          ).format(event.dateTime);
-
-                          return EventCard(
-                            title: event.title,
-                            dateText: formattedDate,
-                            locationText: event.location,
-                            isFavorite: event.isFavorite,
-                            imagePath: event.imageUrl,
-                            onFavoriteTap: () {
-                              ref
-                                  .read(eventProvider.notifier)
-                                  .toggleFavorite(event.id);
-                            },
-                            onTap: () {
-                              context.push(
-                                AppRoutes.eventDetails,
-                                extra: {'eventId': event.id},
-                              );
-                            },
-                            actionButton: SizedBox(
-                              width: double.infinity,
-                              height: 44,
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Add to my calendar',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                      ),
+                      data: (favoriteEvents) {
+                        if (favoriteEvents.isEmpty) {
+                          return Center(
+                            child: Text(
+                              'No favorite events yet!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
                                 ),
                               ),
                             ),
                           );
-                        },
-                      ),
+                        }
+                        return ListView.separated(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
+                          itemCount: favoriteEvents.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final event = favoriteEvents[index];
+                            final formattedDate = DateFormat(
+                              'EEE, d MMM yyyy, h:mm a',
+                            ).format(event.dateTime);
+                            return EventCard(
+                              title: event.title,
+                              dateText: formattedDate,
+                              locationText: event.location,
+                              isFavorite: event.isFavorite,
+                              imagePath: event.imageUrl,
+                              onFavoriteTap: () => ref
+                                  .read(eventActionsProvider)
+                                  .toggleFavorite(event.id),
+                              onTap: () => context.push(
+                                AppRoutes.eventDetails,
+                                extra: {'eventId': event.id},
+                              ),
+                              actionButton: SizedBox(
+                                width: double.infinity,
+                                height: 44,
+                                child: ElevatedButton(
+                                  onPressed: () {},
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Add to my calendar',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
               ),
             ],
           ),

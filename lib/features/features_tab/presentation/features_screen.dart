@@ -22,7 +22,8 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => FilterBottomSheet(provider: eventProvider),
+      builder: (context) =>
+          const FilterBottomSheet(scope: EventFilterScope.features),
     );
   }
 
@@ -32,7 +33,9 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     // Listens specifically to the filtered events list derived from master state
-    final filteredEvents = ref.watch(filteredEventsProvider);
+    final filteredEvents = ref.watch(
+      filteredEventsProvider(EventFilterScope.features),
+    );
 
     return Scaffold(
       body: Container(
@@ -90,8 +93,18 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
 
               // Feature Cards Feed
               Expanded(
-                child: filteredEvents.isEmpty
-                    ? Center(
+                child: filteredEvents.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text('Failed to load events: $e'),
+                    ),
+                  ),
+                  data: (events) {
+                    if (events.isEmpty) {
+                      return Center(
                         child: Text(
                           'No matching events found.',
                           style: TextStyle(
@@ -99,63 +112,60 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
                             fontSize: 16,
                           ),
                         ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        itemCount: filteredEvents.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final event = filteredEvents[index];
-                          final formattedDate = DateFormat(
-                            'EEE, d MMM yyyy, h:mm a',
-                          ).format(event.dateTime);
-
-                          return EventCard(
-                            title: event.title,
-                            dateText: formattedDate,
-                            locationText: '${event.location}, ${event.city}',
-                            isFavorite: event.isFavorite,
-                            imagePath: event.imageUrl,
-                            onFavoriteTap: () {
-                              ref
-                                  .read(eventProvider.notifier)
-                                  .toggleFavorite(event.id);
-                            },
-                            onTap: () {
-                              // Pass eventId to allow details screen to watch single source of truth
-                              context.push(
-                                AppRoutes.eventDetails,
-                                extra: {'eventId': event.id},
-                              );
-                            },
-                            actionButton: SizedBox(
-                              width: double.infinity,
-                              height: 44,
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      itemCount: events.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+                        final formattedDate = DateFormat(
+                          'EEE, d MMM yyyy, h:mm a',
+                        ).format(event.dateTime);
+                        return EventCard(
+                          title: event.title,
+                          dateText: formattedDate,
+                          locationText: '${event.location}, ${event.city}',
+                          isFavorite: event.isFavorite,
+                          imagePath: event.imageUrl,
+                          onFavoriteTap: () => ref
+                              .read(eventActionsProvider)
+                              .toggleFavorite(event.id),
+                          onTap: () => context.push(
+                            AppRoutes.eventDetails,
+                            extra: {'eventId': event.id},
+                          ),
+                          actionButton: SizedBox(
+                            width: double.infinity,
+                            height: 44,
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Text(
-                                  'Add to my calendar',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              ),
+                              child: const Text(
+                                'Add to my calendar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),

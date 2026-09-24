@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
-import 'package:event_management_system/features/auth/providers/auth_provider.dart';
+import 'package:event_management_system/app/config/routes.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -38,19 +38,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   void _navigateToNext() async {
     await Future.delayed(const Duration(seconds: 2));
-
     if (!mounted) return;
-
-    // Read the current state from AuthNotifier
-    final authState = ref.read(authProvider);
-
-    if (authState.isFirstTime) {
-      context.go('/onboarding');
-    } else if (authState.isLoggedIn) {
-      context.go('/home');
-    } else {
-      context.go('/login');
-    }
+    // Router redirect handles the destination. We just exit splash by going
+    // to `/home` — the guard immediately redirects unauthenticated users to
+    // /login or /onboarding.
+    if (context.mounted) context.go(AppRoutes.home);
   }
 
   @override

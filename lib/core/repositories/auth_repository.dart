@@ -1,9 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:event_management_system/core/constants/firestore_paths.dart';
 import 'package:event_management_system/core/providers/firebase_providers.dart';
 import 'package:event_management_system/features/auth/domain/user_model.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthRepository {
   AuthRepository(this._auth);
@@ -42,8 +43,41 @@ class AuthRepository {
 
   /// Requires google_sign_in to be added later. Placeholder for now.
   Future<String> signInWithGoogle() async {
-    // TODO(phase-6): wire GoogleSignIn + GoogleAuthProvider.credential.
-    throw UnimplementedError('Google sign-in wired in Phase 6');
+    if (kIsWeb) {
+      // On web, use Firebase's own popup flow. google_sign_in package on web
+      // also works but has quirks with the sign-out state; popup is simpler.
+      final provider = GoogleAuthProvider()
+        ..addScope('email')
+        ..addScope('profile');
+      final cred = await _auth.signInWithPopup(provider);
+      final user = cred.user;
+      if (user == null) {
+        throw StateError('Google sign-in cancelled.');
+      }
+      return user.uid;
+    }
+
+    // Mobile / desktop
+    final googleSignIn = GoogleSignIn(scopes: const ['email', 'profile']);
+    // Ensure any stale session from a previous login is cleared.
+    await googleSignIn.signOut();
+
+    final account = await googleSignIn.signIn();
+    if (account == null) {
+      throw StateError('Google sign-in cancelled.');
+    }
+
+    final auth = await account.authentication;
+    final credential = GoogleAuthProvider.credential(
+      idToken: auth.idToken,
+      accessToken: auth.accessToken,
+    );
+    final cred = await _auth.signInWithCredential(credential);
+    final user = cred.user;
+    if (user == null) {
+      throw StateError('Google sign-in failed.');
+    }
+    return user.uid;
   }
 
   Future<void> sendPasswordReset(String email) {
@@ -63,13 +97,6 @@ class AuthRepository {
       email: user.email ?? '',
       profileImagePath: user.photoURL ?? '',
     );
-  }
-
-  /// Exposed for Phase 5 to keep paths in one place.
-  String get userDocPath {
-    final uid = currentUid;
-    if (uid == null) throw StateError('No signed-in user');
-    return FirestorePaths.userDoc(uid);
   }
 }
 

@@ -18,12 +18,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _usernameController;
   XFile? _selectedImage;
   bool _isLoading = false;
+  double? _uploadProgress;
 
   @override
   void initState() {
     super.initState();
-    final currentUser = ref.read(userProvider);
-    _usernameController = TextEditingController(text: currentUser.name);
+    // If Firestore already cached the user, prefill; otherwise build's
+    // ref.listen fills it when the stream emits.
+    final currentUser = ref.read(userProvider).value;
+    _usernameController = TextEditingController(text: currentUser?.name ?? '');
   }
 
   @override
@@ -42,23 +45,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _saveChanges() async {
-    // Prevent duplicate taps if already loading
     if (_isLoading) return;
-
     final newName = _usernameController.text.trim();
-    if (newName.isEmpty) return;
+    if (newName.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Name cannot be empty')));
+      return;
+    }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _uploadProgress = null;
+    });
 
     try {
-      final currentUser = ref.read(userProvider);
-      final imagePath = _selectedImage?.path ?? currentUser.profileImagePath;
-
       await ref
-          .read(userProvider.notifier)
-          .updateProfile(newName: newName, newImagePath: imagePath);
+          .read(userActionsProvider)
+          .updateProfile(
+            newName: newName,
+            newImage: _selectedImage,
+            onUploadProgress: (p) {
+              if (mounted) setState(() => _uploadProgress = p);
+            },
+          );
 
-      // Guard: only pop if the screen is still active on screen
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully')),
@@ -66,31 +76,34 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
-      // Guard: only show snackbar if screen is still active
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
       }
     } finally {
-      // Guard: prevents calling setState if the user backed out while saving
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _uploadProgress = null;
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<UserModel>(userProvider, (previous, next) {
-      if (previous?.name != next.name && _usernameController.text.isEmpty) {
-        _usernameController.text = next.name;
+    ref.listen<AsyncValue<UserModel?>>(userProvider, (previous, next) {
+      final nextUser = next.value;
+      if (nextUser != null && _usernameController.text.isEmpty) {
+        _usernameController.text = nextUser.name;
       }
     });
 
-    final user = ref.watch(userProvider);
+    final user = ref.watch(userProvider).value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeImagePath = _selectedImage?.path ?? user.profileImagePath;
+    final activeImagePath =
+        _selectedImage?.path ?? user?.profileImagePath ?? '';
 
     return PopScope(
       canPop: !_isLoading,
@@ -196,6 +209,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
               ),
               const SizedBox(height: 28),
+
+              if (_uploadProgress != null && _uploadProgress! < 1.0) ...[
+                const SizedBox(height: 8),
+                LinearProgressIndicator(value: _uploadProgress),
+                const SizedBox(height: 4),
+                Text(
+                  'Uploading image: ${(_uploadProgress! * 100).toStringAsFixed(0)}%',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
 
               // Save Changes Button
               SizedBox(

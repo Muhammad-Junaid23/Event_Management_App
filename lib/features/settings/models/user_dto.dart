@@ -1,13 +1,13 @@
 class UpdateProfileRequest {
   final String? name;
-  final String? localImagePath;
+  final String? imageUrl;
 
-  const UpdateProfileRequest({this.name, this.localImagePath});
+  const UpdateProfileRequest({this.name, this.imageUrl});
 
-  Map<String, dynamic> toJson({String? imageUrl}) {
+  Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     if (name != null) map['name'] = name;
-    if (imageUrl != null) map['photoUrl'] = imageUrl;
+    if (imageUrl != null) map['profileImagePath'] = imageUrl;
     return map;
   }
 }

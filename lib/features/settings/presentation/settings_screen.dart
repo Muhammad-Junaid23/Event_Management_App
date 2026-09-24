@@ -1,3 +1,4 @@
+import 'package:event_management_system/app/constants/app_assets.dart';
 import 'package:event_management_system/features/settings/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,7 +19,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userProvider);
+    final user = ref.watch(userProvider).value;
     final themeMode = ref.watch(themeProvider);
     final platformBrightness = MediaQuery.platformBrightnessOf(context);
 
@@ -48,7 +49,9 @@ class SettingsScreen extends ConsumerWidget {
                 width: 80,
                 height: 80,
                 child: buildSmartImage(
-                  user.profileImagePath,
+                  (user?.profileImagePath.isEmpty ?? true)
+                      ? AppAssets.user1
+                      : user!.profileImagePath,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -57,7 +60,7 @@ class SettingsScreen extends ConsumerWidget {
 
             // User Info
             Text(
-              user.name,
+              user?.name ?? '',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -66,7 +69,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              user.email,
+              user?.email ?? '',
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textUserEmail,

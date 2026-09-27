@@ -20,7 +20,7 @@ Widget buildSmartImage(
     return Image.asset(
       path,
       fit: fit,
-      errorBuilder: (_, __, ___) => Image.asset(fallback, fit: fit),
+      errorBuilder: (_, _, _) => Image.asset(fallback, fit: fit),
     );
   }
 
@@ -43,7 +43,7 @@ Widget buildSmartImage(
           ),
         );
       },
-      errorBuilder: (_, __, ___) => Image.asset(fallback, fit: fit),
+      errorBuilder: (_, _, _) => Image.asset(fallback, fit: fit),
     );
   }
 
@@ -57,7 +57,7 @@ Widget buildSmartImage(
       return Image.file(
         file,
         fit: fit,
-        errorBuilder: (_, __, ___) => Image.asset(fallback, fit: fit),
+        errorBuilder: (_, _, _) => Image.asset(fallback, fit: fit),
       );
     } catch (_) {
       // fall through to asset fallback
@@ -68,7 +68,7 @@ Widget buildSmartImage(
   return Image.asset(
     fallback,
     fit: fit,
-    errorBuilder: (_, __, ___) => Container(
+    errorBuilder: (_, _, _) => Container(
       color: Colors.grey.shade300,
       child: const Icon(Icons.broken_image, color: Colors.grey),
     ),

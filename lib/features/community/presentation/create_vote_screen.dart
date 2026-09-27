@@ -89,7 +89,7 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
       final req = CreatePollRequest(
         question: _questionController.text.trim(),
         options: _optionControllers.map((c) => c.text.trim()).toList(),
-        groupId: 'grp_1', // TODO: replace with the selected group's ID
+        groupId: 'grp_1',
       );
 
       await ref
@@ -185,7 +185,7 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _optionControllers.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   return TextFormField(
                     key: ObjectKey(_optionControllers[index]),

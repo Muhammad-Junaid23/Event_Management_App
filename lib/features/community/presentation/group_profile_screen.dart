@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,7 +34,7 @@ class GroupProfileScreen extends ConsumerWidget {
                 child: CircularProgressIndicator(color: Colors.white),
               ),
               error: (e, _) => _ErrorView(
-                message: '$e',
+                message: friendlyError(e),
                 onRetry: () => ref.invalidate(groupProfileProvider(groupId)),
               ),
               data: (group) => _buildBody(context, ref, group),

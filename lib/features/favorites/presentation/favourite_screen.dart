@@ -1,4 +1,5 @@
 import 'package:event_management_system/app/config/routes.dart';
+import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -52,9 +53,25 @@ class FavouriteScreen extends ConsumerWidget {
                       loading: () =>
                           const Center(child: CircularProgressIndicator()),
                       error: (e, _) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text('Failed to load favorites: $e'),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(friendlyError(e), textAlign: TextAlign.center),
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: () => ref.invalidate(eventsProvider),
+                              child: const Text(
+                                'Retry',
+                                style: TextStyle(color: AppColors.primary),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       data: (favoriteEvents) {

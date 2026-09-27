@@ -100,8 +100,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     });
 
-    final user = ref.watch(userProvider).value;
+    final userAsync = ref.watch(userProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (userAsync.isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final user = userAsync.value;
     final activeImagePath =
         _selectedImage?.path ?? user?.profileImagePath ?? '';
 

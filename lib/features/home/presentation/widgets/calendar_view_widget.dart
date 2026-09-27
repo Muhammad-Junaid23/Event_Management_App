@@ -1,11 +1,13 @@
+import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../../../../app/constants/app_colors.dart';
-import '../../models/event_model.dart';
-import '../../providers/event_provider.dart';
+import 'package:event_management_system/app/constants/app_colors.dart';
+import 'package:event_management_system/features/home/models/event_model.dart';
+import 'package:event_management_system/features/home/providers/event_provider.dart';
+
 import 'event_card.dart';
 
 class CalendarViewWidget extends ConsumerStatefulWidget {
@@ -23,7 +25,9 @@ class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final filteredAsync = ref.watch(filteredEventsProvider(EventFilterScope.home));
+    final filteredAsync = ref.watch(
+      filteredEventsProvider(EventFilterScope.home),
+    );
     final selectedDate = ref.watch(selectedDateProvider);
     final eventsForSelectedDayAsync = ref.watch(selectedDateEventsProvider);
     final allFilteredEvents = filteredAsync.value ?? const <EventModel>[];
@@ -179,7 +183,7 @@ class _CalendarViewWidgetState extends ConsumerState<CalendarViewWidget> {
             ),
             error: (e, _) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text('Failed to load events: $e'),
+              child: Text(friendlyError(e)),
             ),
             data: (eventsForSelectedDay) {
               if (eventsForSelectedDay.isEmpty) {

@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:event_management_system/features/community/presentation/widgets/community_poll_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,9 +35,31 @@ class CommunityScreen extends ConsumerWidget {
                 child: pollsAsync.when(
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Center(child: Text('Error: $err')),
+                  error: (e, _) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(friendlyError(e), textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () =>
+                              ref.invalidate(communityPollsProvider),
+                          child: const Text(
+                            'Retry',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   data: (polls) {
-                      if (polls.isEmpty) {
+                    if (polls.isEmpty) {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(32),

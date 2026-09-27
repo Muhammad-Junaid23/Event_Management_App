@@ -23,6 +23,12 @@ class AppTheme {
         centerTitle: true,
         iconTheme: IconThemeData(color: AppColors.textMain),
       ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.primary,
+        contentTextStyle: TextStyle(color: Colors.white),
+        elevation: 4,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.background,
@@ -85,6 +91,12 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: AppColors.textWhite),
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.primary,
+        contentTextStyle: TextStyle(color: Colors.white),
+        elevation: 4,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
@@ -6,7 +7,8 @@ import 'package:event_management_system/features/home/presentation/widgets/calen
 import 'package:event_management_system/features/home/presentation/widgets/event_card.dart';
 
 import 'widgets/filter_bottom_sheet.dart';
-import '../providers/event_provider.dart';
+
+import 'package:event_management_system/features/home/providers/event_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +25,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       useRootNavigator: true,
       barrierDismissible: true,
-      builder: (context) => const FilterBottomSheet(scope: EventFilterScope.home),
+      builder: (context) =>
+          const FilterBottomSheet(scope: EventFilterScope.home),
     );
   }
 
@@ -118,9 +121,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: CircularProgressIndicator(),
                             ),
                             error: (e, _) => Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Text('Failed to load events: $e'),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
+                                    size: 48,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    friendlyError(e),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextButton(
+                                    onPressed: () =>
+                                        ref.invalidate(eventsProvider),
+                                    child: const Text(
+                                      'Retry',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             data: (events) {

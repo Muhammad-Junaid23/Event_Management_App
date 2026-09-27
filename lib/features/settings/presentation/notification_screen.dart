@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -66,7 +67,7 @@ class NotificationScreen extends ConsumerWidget {
       body: notificationsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _ErrorState(
-          message: 'Could not load notifications.\n$e',
+          message: 'Could not load notifications.\n${friendlyError(e)}',
           onRetry: () => ref.invalidate(notificationProvider),
         ),
         data: (notifications) {

@@ -54,6 +54,23 @@ final eventFiltersProvider =
     });
 
 // -----------------------------------------------------------------------------
+// Search query (independent of the filter sheet)
+// -----------------------------------------------------------------------------
+class SearchQueryNotifier extends StateNotifier<String> {
+  SearchQueryNotifier() : super('');
+
+  void set(String value) => state = value.trim();
+
+  void clear() => state = '';
+}
+
+final searchQueryProvider = StateNotifierProvider<SearchQueryNotifier, String>((
+  ref,
+) {
+  return SearchQueryNotifier();
+});
+
+// -----------------------------------------------------------------------------
 // 2. Selected calendar date
 // -----------------------------------------------------------------------------
 class SelectedDateNotifier extends StateNotifier<DateTime> {
@@ -116,6 +133,7 @@ final filteredEventsProvider =
     ) {
       final eventsAsync = ref.watch(eventsWithFavoriteProvider);
       final filters = ref.watch(eventFiltersProvider(scope));
+      final query = ref.watch(searchQueryProvider).toLowerCase();
 
       return eventsAsync.whenData((events) {
         return events.where((e) {
@@ -126,7 +144,17 @@ final filteredEventsProvider =
               filters.group == null || e.group == filters.group;
           final matchesCategory =
               filters.category == null || e.category == filters.category;
-          return matchesCity && matchesState && matchesGroup && matchesCategory;
+
+          final matchesQuery =
+              query.isEmpty ||
+              e.title.toLowerCase().contains(query) ||
+              e.location.toLowerCase().contains(query);
+
+          return matchesCity &&
+              matchesState &&
+              matchesGroup &&
+              matchesCategory &&
+              matchesQuery;
         }).toList();
       });
     });

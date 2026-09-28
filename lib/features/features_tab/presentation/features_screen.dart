@@ -19,10 +19,10 @@ class FeaturesScreen extends ConsumerStatefulWidget {
 
 class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
   void _openFilterDialog() {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      useRootNavigator: true,
+      barrierDismissible: true,
       builder: (context) =>
           const FilterBottomSheet(scope: EventFilterScope.features),
     );

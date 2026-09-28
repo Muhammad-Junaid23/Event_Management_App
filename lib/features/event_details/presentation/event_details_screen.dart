@@ -1,6 +1,7 @@
 import 'package:event_management_system/app/config/routes.dart';
 import 'package:event_management_system/core/utils/cloudinary_url.dart';
 import 'package:event_management_system/features/home/providers/event_provider.dart';
+import 'package:event_management_system/features/settings/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
@@ -100,100 +101,103 @@ class EventDetailsScreen extends ConsumerWidget {
                                       .toggleFavorite(event.id);
                                 },
                               ),
-                              PopupMenuButton<String>(
-                                icon: const Icon(
-                                  Icons.more_vert,
-                                  color: Colors.white,
-                                ),
-                                onSelected: (value) async {
-                                  if (value == 'edit') {
-                                    context.push(
-                                      AppRoutes.createEvent,
-                                      extra: {'eventId': event.id},
-                                    );
-                                  } else if (value == 'delete') {
-                                    final confirmed = await showDialog<bool>(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Delete event?'),
-                                        content: const Text(
-                                          'This cannot be undone. The event will be removed for all users.',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(ctx, false),
-                                            child: const Text('Cancel'),
+                              if (ref.watch(isAdminProvider))
+                                PopupMenuButton<String>(
+                                  icon: const Icon(
+                                    Icons.more_vert,
+                                    color: Colors.white,
+                                  ),
+                                  onSelected: (value) async {
+                                    if (value == 'edit') {
+                                      context.push(
+                                        AppRoutes.createEvent,
+                                        extra: {'eventId': event.id},
+                                      );
+                                    } else if (value == 'delete') {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text('Delete event?'),
+                                          content: const Text(
+                                            'This cannot be undone. The event will be removed for all users.',
                                           ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(ctx, true),
-                                            child: const Text(
-                                              'Delete',
-                                              style: TextStyle(
-                                                color: AppColors.primary,
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, true),
+                                              child: const Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                  color: AppColors.primary,
+                                                ),
                                               ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirmed != true) return;
+
+                                      final messenger = ScaffoldMessenger.of(
+                                        context,
+                                      );
+                                      final router = GoRouter.of(context);
+                                      final eventId = event.id;
+
+                                      // Pop first so EventDetails doesn't flash "not found".
+                                      router.pop();
+
+                                      try {
+                                        await ref
+                                            .read(eventActionsProvider)
+                                            .delete(eventId);
+                                      } catch (e) {
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Failed to delete: $e',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  itemBuilder: (_) => const [
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit_outlined, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                            color: AppColors.primary,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Delete',
+                                            style: TextStyle(
+                                              color: AppColors.primary,
                                             ),
                                           ),
                                         ],
                                       ),
-                                    );
-                                    if (confirmed != true) return;
-
-                                    final messenger = ScaffoldMessenger.of(
-                                      context,
-                                    );
-                                    final router = GoRouter.of(context);
-                                    final eventId = event.id;
-
-                                    // Pop first so EventDetails doesn't flash "not found".
-                                    router.pop();
-
-                                    try {
-                                      await ref
-                                          .read(eventActionsProvider)
-                                          .delete(eventId);
-                                    } catch (e) {
-                                      messenger.showSnackBar(
-                                        SnackBar(
-                                          content: Text('Failed to delete: $e'),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                                itemBuilder: (_) => const [
-                                  PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit_outlined, size: 18),
-                                        SizedBox(width: 8),
-                                        Text('Edit'),
-                                      ],
                                     ),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete_outline,
-                                          size: 18,
-                                          color: AppColors.primary,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
                             ],
                           ),
                         ),

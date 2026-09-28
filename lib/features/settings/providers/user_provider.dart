@@ -54,3 +54,8 @@ class UserActions {
 }
 
 final userActionsProvider = Provider<UserActions>((ref) => UserActions(ref));
+
+/// True only for the current signed-in user if their doc says isAdmin: true.
+final isAdminProvider = Provider<bool>((ref) {
+  return ref.watch(userProvider).value?.isAdmin ?? false;
+});

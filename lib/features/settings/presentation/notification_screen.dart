@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/utils/cloudinary_url.dart';
 import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,7 +115,9 @@ class NotificationScreen extends ConsumerWidget {
                             width: 52,
                             height: 52,
                             child: buildSmartImage(
-                              item.imageUrl ?? AppAssets.featuresCard,
+                              item.imageUrl == null || item.imageUrl!.isEmpty
+                                  ? AppAssets.featuresCard
+                                  : cloudinaryAvatar(item.imageUrl!, size: 120),
                               fit: BoxFit.cover,
                             ),
                           ),

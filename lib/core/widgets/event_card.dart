@@ -1,4 +1,5 @@
 import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/core/utils/cloudinary_url.dart';
 import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 import 'package:flutter/material.dart';
 
@@ -65,7 +66,11 @@ class EventCard extends StatelessWidget {
                         width: double.infinity,
                         color: Colors.grey.shade300,
                         child: buildSmartImage(
-                          activeImagePath,
+                          cloudinaryThumb(
+                            activeImagePath,
+                            width: 400,
+                            height: 400,
+                          ),
                           fit: BoxFit.cover,
                           fallbackAsset: AppAssets.featuresCard,
                         ),

@@ -12,8 +12,9 @@ final _pollsStreamProvider = StreamProvider.autoDispose<List<PollModel>>((ref) {
   return ref.watch(pollRepositoryProvider).watchAll();
 });
 
-final _userPollVotesProvider =
-    StreamProvider.autoDispose<Map<String, String>>((ref) {
+final _userPollVotesProvider = StreamProvider.autoDispose<Map<String, String>>((
+  ref,
+) {
   final uid = ref.watch(currentUidProvider);
   if (uid == null) return Stream.value(const {});
   return ref.watch(pollRepositoryProvider).watchUserVotes(uid);
@@ -31,23 +32,24 @@ List<PollModel> _merge(List<PollModel> polls, Map<String, String> votes) {
   }).toList();
 }
 
-final communityPollsProvider =
-    Provider.autoDispose<AsyncValue<List<PollModel>>>((ref) {
-  final pollsAsync = ref.watch(_pollsStreamProvider);
-  final votesAsync = ref.watch(_userPollVotesProvider);
+final communityPollsProvider = Provider.autoDispose<AsyncValue<List<PollModel>>>(
+  (ref) {
+    final pollsAsync = ref.watch(_pollsStreamProvider);
+    final votesAsync = ref.watch(_userPollVotesProvider);
 
-  // If polls errored, show that. If polls loading, show loading.
-  if (pollsAsync.hasError) {
-    return AsyncValue.error(pollsAsync.error!, pollsAsync.stackTrace!);
-  }
-  if (pollsAsync.isLoading) return const AsyncValue.loading();
+    // If polls errored, show that. If polls loading, show loading.
+    if (pollsAsync.hasError) {
+      return AsyncValue.error(pollsAsync.error!, pollsAsync.stackTrace!);
+    }
+    if (pollsAsync.isLoading) return const AsyncValue.loading();
 
-  final polls = pollsAsync.value ?? const <PollModel>[];
+    final polls = pollsAsync.value ?? const <PollModel>[];
 
-  // Votes are secondary — if they're still loading, show polls without merge.
-  final votes = votesAsync.value ?? const <String, String>{};
-  return AsyncValue.data(_merge(polls, votes));
-});
+    // Votes are secondary — if they're still loading, show polls without merge.
+    final votes = votesAsync.value ?? const <String, String>{};
+    return AsyncValue.data(_merge(polls, votes));
+  },
+);
 
 // -----------------------------------------------------------------------------
 // Actions (create, vote)
@@ -58,9 +60,11 @@ class CommunityPollsActions {
   final Ref _ref;
 
   Future<void> create(CreatePollRequest req, {String? imageUrl}) async {
-    await _ref
-        .read(pollRepositoryProvider)
-        .create(req, imageUrl: imageUrl);
+    await _ref.read(pollRepositoryProvider).create(req, imageUrl: imageUrl);
+  }
+
+  Future<void> delete(String pollId) async {
+    await _ref.read(pollRepositoryProvider).delete(pollId);
   }
 
   Future<void> vote(String pollId, String optionId) async {
@@ -68,7 +72,9 @@ class CommunityPollsActions {
     if (uid == null) {
       throw StateError('Sign in required to vote.');
     }
-    await _ref.read(pollRepositoryProvider).vote(
+    await _ref
+        .read(pollRepositoryProvider)
+        .vote(
           uid: uid,
           req: VoteRequest(pollId: pollId, optionId: optionId),
         );
@@ -77,5 +83,5 @@ class CommunityPollsActions {
 
 final communityPollsActionsProvider =
     Provider.autoDispose<CommunityPollsActions>((ref) {
-  return CommunityPollsActions(ref);
-});
+      return CommunityPollsActions(ref);
+    });

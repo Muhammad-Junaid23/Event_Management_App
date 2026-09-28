@@ -197,6 +197,14 @@ class EventActions {
     await _ref.read(eventRepositoryProvider).create(req, imageUrl: imageUrl);
   }
 
+  Future<void> update(String eventId, UpdateEventRequest req) async {
+    await _ref.read(eventRepositoryProvider).update(eventId, req);
+  }
+
+  Future<void> delete(String eventId) async {
+    await _ref.read(eventRepositoryProvider).delete(eventId);
+  }
+
   Future<void> toggleFavorite(String eventId) async {
     final uid = _ref.read(currentUidProvider);
     if (uid == null) throw StateError('Sign in required.');

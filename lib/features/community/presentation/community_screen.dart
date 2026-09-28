@@ -1,4 +1,3 @@
-import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:event_management_system/features/community/presentation/widgets/community_poll_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +6,7 @@ import 'package:event_management_system/app/config/routes.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
 import 'package:event_management_system/features/community/providers/community_polls_provider.dart';
+import 'package:event_management_system/core/utils/error_messages.dart';
 
 class CommunityScreen extends ConsumerWidget {
   final bool isAdmin;
@@ -35,27 +35,13 @@ class CommunityScreen extends ConsumerWidget {
                 child: pollsAsync.when(
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(friendlyError(e), textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        TextButton(
-                          onPressed: () =>
-                              ref.invalidate(communityPollsProvider),
-                          child: const Text(
-                            'Retry',
-                            style: TextStyle(color: AppColors.primary),
-                          ),
-                        ),
-                      ],
+                  error: (err, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        friendlyError(err),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                   data: (polls) {
@@ -108,6 +94,9 @@ class CommunityScreen extends ConsumerWidget {
                               }
                             }
                           },
+                          onDelete: isAdmin
+                              ? () => _confirmDeletePoll(context, ref, poll.id)
+                              : null,
                         );
                       },
                     );
@@ -119,6 +108,48 @@ class CommunityScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDeletePoll(
+    BuildContext context,
+    WidgetRef ref,
+    String pollId,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete poll?'),
+        content: const Text('Votes will be lost. This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(communityPollsActionsProvider).delete(pollId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Poll deleted')));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete: ${friendlyError(e)}')),
+        );
+      }
+    }
   }
 
   Widget _buildAdminFab(BuildContext context) {
@@ -150,7 +181,6 @@ class CommunityScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          // Tapping avatar/title directly navigates to Group Profile
           InkWell(
             onTap: () => context.push(
               AppRoutes.groupProfile,

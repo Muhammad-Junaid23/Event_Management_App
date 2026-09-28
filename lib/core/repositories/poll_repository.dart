@@ -64,6 +64,21 @@ class PollRepository {
     return _fromDoc(created);
   }
 
+  Future<void> delete(String id) async {
+    // Best-effort: also clear any per-user vote docs so nothing is orphaned.
+    final voteDocs = await _db
+        .collection(FirestorePaths.polls)
+        .doc(id)
+        .collection('votes')
+        .get();
+    final batch = _db.batch();
+    for (final doc in voteDocs.docs) {
+      batch.delete(doc.reference);
+    }
+    batch.delete(_col.doc(id));
+    await batch.commit();
+  }
+
   /// Atomic vote. Handles vote change and undo in one transaction.
   Future<void> vote({required String uid, required VoteRequest req}) async {
     final pollRef = _col.doc(req.pollId);

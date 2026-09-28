@@ -124,7 +124,11 @@ class AppRoutes {
         GoRoute(
           parentNavigatorKey: _rootNavigatorKey,
           path: createEvent,
-          builder: (context, state) => const CreateEventScreen(),
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final eventId = extra?['eventId'] as String?;
+            return CreateEventScreen(eventId: eventId);
+          },
         ),
         GoRoute(
           parentNavigatorKey: _rootNavigatorKey,

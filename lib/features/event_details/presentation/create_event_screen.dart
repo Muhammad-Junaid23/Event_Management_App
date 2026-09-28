@@ -8,9 +8,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/core/services/image_upload_service.dart';
 import 'package:event_management_system/features/home/models/event_dto.dart';
+import 'package:intl/intl.dart';
 
 class CreateEventScreen extends ConsumerStatefulWidget {
-  const CreateEventScreen({super.key});
+  final String? eventId; // null = create, non-null = edit
+
+  const CreateEventScreen({super.key, this.eventId});
+
+  bool get isEditMode => eventId != null;
 
   @override
   ConsumerState<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -24,6 +29,34 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _detailController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.eventId;
+    if (id != null) {
+      // Load the event from the current stream snapshot (already fetched).
+      final existing = ref
+          .read(eventsWithFavoriteProvider)
+          .value
+          ?.where((e) => e.id == id)
+          .firstOrNull;
+      if (existing != null) {
+        _titleController.text = existing.title;
+        _locationController.text = existing.location;
+        _detailController.text = existing.description;
+        _dateController.text =
+            "${existing.dateTime.day.toString().padLeft(2, '0')}/${existing.dateTime.month.toString().padLeft(2, '0')}/${existing.dateTime.year}";
+        _timeController.text = DateFormat('h:mm a').format(existing.dateTime);
+        _selectedDate = existing.dateTime;
+        _selectedTime = TimeOfDay.fromDateTime(existing.dateTime);
+        _selectedCity = existing.city;
+        _selectedState = existing.state;
+        _selectedCategory = existing.category;
+        _selectedGroupId = existing.group;
+      }
+    }
+  }
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
@@ -139,25 +172,45 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
           .read(imageUploadServiceProvider)
           .uploadOrKeep(file: _selectedImage, bucket: ImageBucket.event);
 
-      // 2. Create event doc in Firestore.
-      final req = CreateEventRequest(
-        title: _titleController.text.trim(),
-        description: _detailController.text.trim(),
-        dateTime: eventDateTime,
-        location: _locationController.text.trim(),
-        city: _selectedCity ?? 'Unknown',
-        state: _selectedState ?? 'Unknown',
-        category: _selectedCategory ?? 'Business',
-        groupId: _selectedGroupId,
-      );
-
-      await ref
-          .read(eventActionsProvider)
-          .create(req, imageUrl: imageUrl.isNotEmpty ? imageUrl : null);
+      // 2. Create/edit event doc in Firestore.
+      if (widget.isEditMode) {
+        final req = UpdateEventRequest(
+          title: _titleController.text.trim(),
+          description: _detailController.text.trim(),
+          dateTime: eventDateTime,
+          location: _locationController.text.trim(),
+          city: _selectedCity,
+          state: _selectedState,
+          category: _selectedCategory,
+          groupId: _selectedGroupId,
+          imageUrl: imageUrl.isNotEmpty ? imageUrl : null,
+        );
+        await ref.read(eventActionsProvider).update(widget.eventId!, req);
+      } else {
+        final req = CreateEventRequest(
+          title: _titleController.text.trim(),
+          description: _detailController.text.trim(),
+          dateTime: eventDateTime,
+          location: _locationController.text.trim(),
+          city: _selectedCity ?? 'Unknown',
+          state: _selectedState ?? 'Unknown',
+          category: _selectedCategory ?? 'Business',
+          groupId: _selectedGroupId,
+        );
+        await ref
+            .read(eventActionsProvider)
+            .create(req, imageUrl: imageUrl.isNotEmpty ? imageUrl : null);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Event created successfully')),
+          SnackBar(
+            content: Text(
+              widget.isEditMode
+                  ? 'Event updated successfully'
+                  : 'Event created successfully',
+            ),
+          ),
         );
         Navigator.of(context).pop(true);
       }
@@ -176,9 +229,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Create Event',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          widget.isEditMode ? 'Edit Event' : 'Create Event',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
         elevation: 0,
@@ -331,9 +384,12 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text(
-                          'Create Event',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
+                      : Text(
+                          widget.isEditMode ? 'Save Changes' : 'Create Event',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
                         ),
                 ),
               ),

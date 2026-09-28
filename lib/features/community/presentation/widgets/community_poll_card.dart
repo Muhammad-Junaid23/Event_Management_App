@@ -11,6 +11,7 @@ class CommunityPollCard extends StatelessWidget {
   final String timeAgo;
   final bool isDark;
   final ValueChanged<String>? onOptionSelected;
+  final VoidCallback? onDelete;
 
   const CommunityPollCard({
     super.key,
@@ -19,6 +20,7 @@ class CommunityPollCard extends StatelessWidget {
     required this.timeAgo,
     required this.isDark,
     this.onOptionSelected,
+    this.onDelete,
   });
 
   @override
@@ -37,16 +39,62 @@ class CommunityPollCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header image with three-dot menu overlay
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-            child: SizedBox(
-              height: 220,
-              width: double.infinity,
-              child: buildSmartImage(
-                cloudinaryThumb(imagePath, width: 400, height: 400),
-                fit: BoxFit.cover,
-                fallbackAsset: AppAssets.featuresCard,
-              ),
+            child: Stack(
+              children: [
+                SizedBox(
+                  height: 220,
+                  width: double.infinity,
+                  child: buildSmartImage(
+                    cloudinaryThumb(imagePath, width: 400, height: 400),
+                    fit: BoxFit.cover,
+                    fallbackAsset: AppAssets.featuresCard,
+                  ),
+                ),
+                if (onDelete != null)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        shape: BoxShape.circle,
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        tooltip: 'Options',
+                        onSelected: (value) {
+                          if (value == 'delete') onDelete?.call();
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                  color: AppColors.primary,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Delete poll',
+                                  style: TextStyle(color: AppColors.primary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           Padding(
@@ -67,7 +115,7 @@ class CommunityPollCard extends StatelessWidget {
                   children: List.generate(poll.options.length, (index) {
                     final option = poll.options[index];
                     final isSelected = poll.userVotedOptionId == option.id;
-                    final optionLabel = '${String.fromCharCode(65 + index)}.'; // Converts 0 to A., 1 to B.
+                    final optionLabel = '${String.fromCharCode(65 + index)}.';
 
                     return Padding(
                       padding: EdgeInsets.only(

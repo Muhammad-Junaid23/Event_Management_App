@@ -7,6 +7,7 @@ class UserModel {
   final String profileImagePath;
   final String? bio;
   final List<String> favoriteEventIds;
+  final bool isAdmin;
 
   UserModel({
     required this.id,
@@ -15,6 +16,7 @@ class UserModel {
     required this.profileImagePath,
     this.bio,
     this.favoriteEventIds = const [],
+    this.isAdmin = false,
   });
 
   UserModel copyWith({
@@ -24,6 +26,7 @@ class UserModel {
     String? profileImagePath,
     String? bio,
     List<String>? favoriteEventIds,
+    bool? isAdmin,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -32,6 +35,7 @@ class UserModel {
       profileImagePath: profileImagePath ?? this.profileImagePath,
       bio: bio ?? this.bio,
       favoriteEventIds: favoriteEventIds ?? this.favoriteEventIds,
+      isAdmin: isAdmin ?? this.isAdmin,
     );
   }
 
@@ -48,6 +52,7 @@ class UserModel {
       favoriteEventIds: rawFavs is List
           ? rawFavs.map((e) => e.toString()).toList()
           : const [],
+      isAdmin: parseBool(json['isAdmin']),
     );
   }
 
@@ -59,6 +64,7 @@ class UserModel {
       'profileImagePath': profileImagePath,
       'bio': bio,
       'favoriteEventIds': favoriteEventIds,
+      'isAdmin': isAdmin,
     };
   }
 }

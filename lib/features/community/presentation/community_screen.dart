@@ -1,4 +1,5 @@
 import 'package:event_management_system/features/community/presentation/widgets/community_poll_card.dart';
+import 'package:event_management_system/features/settings/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,14 +10,13 @@ import 'package:event_management_system/features/community/providers/community_p
 import 'package:event_management_system/core/utils/error_messages.dart';
 
 class CommunityScreen extends ConsumerWidget {
-  final bool isAdmin;
-
-  const CommunityScreen({super.key, this.isAdmin = true});
+  const CommunityScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pollsAsync = ref.watch(communityPollsProvider);
+    final isAdmin = ref.watch(isAdminProvider);
 
     return Scaffold(
       floatingActionButton: isAdmin ? _buildAdminFab(context) : null,

@@ -1,4 +1,5 @@
 import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/core/utils/cloudinary_url.dart';
 import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:event_management_system/features/settings/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +57,10 @@ class SettingsScreen extends ConsumerWidget {
                       child: buildSmartImage(
                         (user?.profileImagePath.isEmpty ?? true)
                             ? AppAssets.user1
-                            : user!.profileImagePath,
+                            : cloudinaryAvatar(
+                                user!.profileImagePath,
+                                size: 200,
+                              ),
                         fit: BoxFit.cover,
                       ),
                     ),

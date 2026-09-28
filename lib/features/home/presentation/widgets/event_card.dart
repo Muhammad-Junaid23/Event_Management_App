@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/utils/cloudinary_url.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -43,7 +44,10 @@ class EventCard extends ConsumerWidget {
                     width: 44,
                     height: 44,
                     color: Colors.grey.shade300,
-                    child: buildSmartImage(event.imageUrl, fit: BoxFit.cover),
+                    child: buildSmartImage(
+                      cloudinaryThumb(event.imageUrl, width: 400, height: 400),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),

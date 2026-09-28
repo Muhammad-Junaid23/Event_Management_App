@@ -1,4 +1,5 @@
 import 'package:event_management_system/app/constants/app_assets.dart';
+import 'package:event_management_system/core/utils/cloudinary_url.dart';
 import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 import 'package:event_management_system/features/community/models/community_poll_model.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +43,7 @@ class CommunityPollCard extends StatelessWidget {
               height: 220,
               width: double.infinity,
               child: buildSmartImage(
-                imagePath,
+                cloudinaryThumb(imagePath, width: 400, height: 400),
                 fit: BoxFit.cover,
                 fallbackAsset: AppAssets.featuresCard,
               ),

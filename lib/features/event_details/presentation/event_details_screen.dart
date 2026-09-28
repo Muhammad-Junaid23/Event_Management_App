@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/utils/cloudinary_url.dart';
 import 'package:event_management_system/features/home/providers/event_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,7 +58,11 @@ class EventDetailsScreen extends ConsumerWidget {
                         height: screenHeight * 0.35,
                         width: double.infinity,
                         child: buildSmartImage(
-                          event.imageUrl,
+                          cloudinaryThumb(
+                            event.imageUrl,
+                            width: 800,
+                            height: 500,
+                          ),
                           fit: BoxFit.cover,
                           fallbackAsset: AppAssets.featuresCard,
                         ),

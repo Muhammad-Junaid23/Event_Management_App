@@ -1,3 +1,4 @@
+import 'package:event_management_system/core/utils/cloudinary_url.dart';
 import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -277,7 +278,7 @@ class GroupProfileScreen extends ConsumerWidget {
                   width: 76,
                   height: 76,
                   child: buildSmartImage(
-                    groupProfile.imageUrl,
+                    cloudinaryAvatar(groupProfile.imageUrl, size: 200),
                     fit: BoxFit.cover,
                     fallbackAsset: AppAssets.businessGroup,
                   ),

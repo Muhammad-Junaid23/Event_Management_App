@@ -25,4 +25,12 @@ class StorageService {
   Future<void> saveThemeMode(String mode) async {
     await _prefs.setString(_themeModeKey, mode);
   }
+
+  static const String _selectedGroupKey = 'selected_group_id';
+
+  String? getSelectedGroupId() => _prefs.getString(_selectedGroupKey);
+
+  Future<void> saveSelectedGroupId(String groupId) async {
+    await _prefs.setString(_selectedGroupKey, groupId);
+  }
 }

@@ -34,7 +34,9 @@ class AppRoutes {
   static const String favourite = '/favourite';
   static const String settings = '/settings';
   static const String groupProfile = '/group-profile';
+  static String groupProfilePath(String groupId) => '/group-profile/$groupId';
   static const String eventDetails = '/event-details';
+  static String eventDetailsPath(String eventId) => '/event-details/$eventId';
   static const String editProfile = '/edit-profile';
   static const String notification = '/notification';
   static const String createEvent = '/create-event';
@@ -105,19 +107,17 @@ class AppRoutes {
         ),
         GoRoute(
           parentNavigatorKey: _rootNavigatorKey,
-          path: groupProfile,
+          path: '$groupProfile/:groupId',
           builder: (context, state) {
-            final args = state.extra as Map<String, dynamic>?;
-            final groupId = args?['groupId'] as String? ?? 'grp_1';
+            final groupId = state.pathParameters['groupId'] ?? 'grp_1';
             return GroupProfileScreen(groupId: groupId);
           },
         ),
         GoRoute(
           parentNavigatorKey: _rootNavigatorKey,
-          path: eventDetails,
+          path: '$eventDetails/:eventId',
           builder: (context, state) {
-            final extra = state.extra as Map<String, dynamic>?;
-            final eventId = extra?['eventId'] as String? ?? '';
+            final eventId = state.pathParameters['eventId'] ?? '';
             return EventDetailsScreen(eventId: eventId);
           },
         ),

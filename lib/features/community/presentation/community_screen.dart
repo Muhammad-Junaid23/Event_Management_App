@@ -1,4 +1,7 @@
+import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
+import 'package:event_management_system/features/community/models/group_profile_model.dart';
 import 'package:event_management_system/features/community/presentation/widgets/community_poll_card.dart';
+import 'package:event_management_system/features/community/providers/groups_provider.dart';
 import 'package:event_management_system/features/settings/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +18,18 @@ class CommunityScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pollsAsync = ref.watch(communityPollsProvider);
+    final currentGroup = ref.watch(currentGroupProvider);
+    final groupId = currentGroup?.groupId ?? '';
+
+    // If no selection yet and groups loaded, default to first.
+    if (groupId.isNotEmpty && ref.read(selectedGroupProvider) == null) {
+      // Safe to call after frame; defer to avoid modifying during build.
+      Future.microtask(
+        () => ref.read(selectedGroupProvider.notifier).select(groupId),
+      );
+    }
+
+    final pollsAsync = ref.watch(communityPollsProvider(groupId));
     final isAdmin = ref.watch(isAdminProvider);
 
     return Scaffold(
@@ -30,7 +44,7 @@ class CommunityScreen extends ConsumerWidget {
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(context),
+              _buildHeader(context, ref),
               Expanded(
                 child: pollsAsync.when(
                   loading: () =>
@@ -46,11 +60,11 @@ class CommunityScreen extends ConsumerWidget {
                   ),
                   data: (polls) {
                     if (polls.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
                           padding: EdgeInsets.all(32),
                           child: Text(
-                            'No polls yet.\nTap "Vote" to create one.',
+                            'No polls in this group yet.\n${isAdmin ? 'Tap "Vote" to create one.' : ''}',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
@@ -175,52 +189,148 @@ class CommunityScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    final groupsAsync = ref.watch(allGroupsProvider);
+    final current = ref.watch(currentGroupProvider);
+
     return Container(
       color: AppColors.primary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           InkWell(
-            onTap: () => context.push(
-              AppRoutes.groupProfile,
-              extra: {'groupId': 'grp_1'},
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.white24,
-                  child: ClipOval(
-                    child: Image.asset(
-                      AppAssets.businessGroup,
-                      width: 36,
-                      height: 36,
-                      fit: BoxFit.cover,
+            onTap: () => _showGroupPicker(context, ref),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.white24,
+                    child: ClipOval(
+                      child: SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: buildSmartImage(
+                          current?.imageUrl ?? '',
+                          fit: BoxFit.cover,
+                          fallbackAsset: AppAssets.businessGroup,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Business group',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  const SizedBox(width: 12),
+                  Text(
+                    current?.name ??
+                        (groupsAsync.isLoading ? 'Loading…' : 'No groups'),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () => context.push(
-              AppRoutes.groupProfile,
-              extra: {'groupId': 'grp_1'},
-            ),
+            onPressed: () {
+              final id = current?.groupId;
+              if (id == null) return;
+              context.push(AppRoutes.groupProfilePath(id));
+            },
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showGroupPicker(BuildContext context, WidgetRef ref) async {
+    final groups =
+        ref.read(allGroupsProvider).value ?? const <GroupProfileState>[];
+    if (groups.isEmpty) return;
+    final selectedId = ref.read(selectedGroupProvider);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: SafeArea(
+          top: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'Switch group',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    children: [
+                      for (final g in groups)
+                        ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.primaryTransparent,
+                            child: ClipOval(
+                              child: SizedBox(
+                                width: 40,
+                                height: 40,
+                                child: buildSmartImage(
+                                  g.imageUrl,
+                                  fit: BoxFit.cover,
+                                  fallbackAsset: AppAssets.businessGroup,
+                                ),
+                              ),
+                            ),
+                          ),
+                          title: Text(g.name),
+                          subtitle: Text(
+                            '${(g.memberCount / 1000).toStringAsFixed(0)}K members',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          trailing: g.groupId == selectedId
+                              ? const Icon(
+                                  Icons.check,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                          onTap: () {
+                            ref
+                                .read(selectedGroupProvider.notifier)
+                                .select(g.groupId);
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

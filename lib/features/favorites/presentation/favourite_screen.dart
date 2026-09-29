@@ -111,8 +111,7 @@ class FavouriteScreen extends ConsumerWidget {
                                   .read(eventActionsProvider)
                                   .toggleFavorite(event.id),
                               onTap: () => context.push(
-                                AppRoutes.eventDetails,
-                                extra: {'eventId': event.id},
+                                AppRoutes.eventDetailsPath(event.id),
                               ),
                               actionButton: SizedBox(
                                 width: double.infinity,

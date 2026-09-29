@@ -82,7 +82,16 @@ class GroupRepository {
     );
   }
 
-  
+  Stream<List<GroupProfileState>> watchAll() {
+    return _col.snapshots().map((snap) {
+      return snap.docs
+          .map(
+            (doc) =>
+                GroupProfileState.fromJson({...doc.data(), 'groupId': doc.id}),
+          )
+          .toList();
+    });
+  }
 }
 
 final groupRepositoryProvider = Provider<GroupRepository>((ref) {

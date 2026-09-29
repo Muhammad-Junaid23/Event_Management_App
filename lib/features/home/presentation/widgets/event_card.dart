@@ -110,9 +110,17 @@ class EventCard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                ref.read(eventActionsProvider).toggleRsvp(event.id).catchError((
+                  e,
+                ) {
+                  // swallow, or show snackbar in caller
+                });
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: event.isRsvped
+                    ? Colors.green.shade700
+                    : AppColors.primary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
@@ -122,8 +130,8 @@ class EventCard extends ConsumerWidget {
                   vertical: 8,
                 ),
               ),
-              child: const Text(
-                'Add to my calendar',
+              child: Text(
+                event.isRsvped ? 'Attending ✓' : 'Add to my calendar',
                 style: TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),

@@ -7,6 +7,7 @@ class UserModel {
   final String profileImagePath;
   final String? bio;
   final List<String> favoriteEventIds;
+  final List<String> rsvpEventIds;
   final bool isAdmin;
 
   UserModel({
@@ -16,6 +17,7 @@ class UserModel {
     required this.profileImagePath,
     this.bio,
     this.favoriteEventIds = const [],
+    this.rsvpEventIds = const [],
     this.isAdmin = false,
   });
 
@@ -26,6 +28,7 @@ class UserModel {
     String? profileImagePath,
     String? bio,
     List<String>? favoriteEventIds,
+    List<String>? rsvpEventIds,
     bool? isAdmin,
   }) {
     return UserModel(
@@ -35,12 +38,14 @@ class UserModel {
       profileImagePath: profileImagePath ?? this.profileImagePath,
       bio: bio ?? this.bio,
       favoriteEventIds: favoriteEventIds ?? this.favoriteEventIds,
+      rsvpEventIds: rsvpEventIds ?? this.rsvpEventIds,
       isAdmin: isAdmin ?? this.isAdmin,
     );
   }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final rawFavs = json['favoriteEventIds'];
+    final rawRSVPEvents = json['rsvpEventIds'];
     return UserModel(
       id: parseString(json['id'] ?? json['_id']),
       name: parseString(json['name']),
@@ -51,6 +56,9 @@ class UserModel {
       bio: json['bio'] as String?,
       favoriteEventIds: rawFavs is List
           ? rawFavs.map((e) => e.toString()).toList()
+          : const [],
+      rsvpEventIds: rawRSVPEvents is List
+          ? rawRSVPEvents.map((e) => e.toString()).toList()
           : const [],
       isAdmin: parseBool(json['isAdmin']),
     );
@@ -64,6 +72,7 @@ class UserModel {
       'profileImagePath': profileImagePath,
       'bio': bio,
       'favoriteEventIds': favoriteEventIds,
+      'rsvpEventIds': rsvpEventIds,
       'isAdmin': isAdmin,
     };
   }

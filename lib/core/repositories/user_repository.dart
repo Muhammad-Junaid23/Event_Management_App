@@ -74,6 +74,25 @@ class UserRepository {
       return raw is List ? raw.cast<String>() : const <String>[];
     });
   }
+
+  Stream<List<String>> watchRsvpIds(String uid) {
+    return _ref(uid).snapshots().map((snap) {
+      final raw = snap.data()?['rsvpEventIds'];
+      return raw is List ? raw.cast<String>() : const <String>[];
+    });
+  }
+
+  Future<void> toggleRsvp(String uid, String eventId) async {
+    final ref = _ref(uid);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data() ?? {};
+      final list = (data['rsvpEventIds'] as List?)?.cast<String>() ?? [];
+      final has = list.contains(eventId);
+      final updated = has ? (list..remove(eventId)) : (list..add(eventId));
+      tx.set(ref, {'rsvpEventIds': updated}, SetOptions(merge: true));
+    });
+  }
 }
 
 final userRepositoryProvider = Provider<UserRepository>((ref) {

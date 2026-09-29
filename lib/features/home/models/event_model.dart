@@ -12,6 +12,7 @@ class EventModel {
   final String group;
   final String imageUrl;
   final bool isFavorite;
+  final bool isRsvped;
 
   const EventModel({
     required this.id,
@@ -25,6 +26,7 @@ class EventModel {
     required this.group,
     required this.imageUrl,
     this.isFavorite = false,
+    this.isRsvped = false,
   });
 
   EventModel copyWith({
@@ -39,6 +41,7 @@ class EventModel {
     String? group,
     String? imageUrl,
     bool? isFavorite,
+    bool? isRsvped,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -52,6 +55,7 @@ class EventModel {
       group: group ?? this.group,
       imageUrl: imageUrl ?? this.imageUrl,
       isFavorite: isFavorite ?? this.isFavorite,
+      isRsvped: isRsvped ?? this.isRsvped,
     );
   }
 
@@ -74,6 +78,7 @@ class EventModel {
       group: parseString(json['group'] ?? json['groupId']),
       imageUrl: parseString(json['imageUrl']),
       isFavorite: parseBool(json['isFavorite']),
+      isRsvped: parseBool(json['isRsvped']),
     );
   }
 
@@ -93,6 +98,7 @@ class EventModel {
       'group': group,
       'imageUrl': imageUrl,
       'isFavorite': isFavorite,
+      'isRsvped': isRsvped,
     };
   }
 }

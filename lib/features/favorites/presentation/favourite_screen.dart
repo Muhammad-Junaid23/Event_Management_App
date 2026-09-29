@@ -118,16 +118,34 @@ class FavouriteScreen extends ConsumerWidget {
                                 width: double.infinity,
                                 height: 44,
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    try {
+                                      await ref
+                                          .read(eventActionsProvider)
+                                          .toggleRsvp(event.id);
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(content: Text('Failed: $e')),
+                                        );
+                                      }
+                                    }
+                                  },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
+                                    backgroundColor: event.isRsvped
+                                        ? Colors.green.shade700
+                                        : AppColors.primary,
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
-                                  child: const Text(
-                                    'Add to my calendar',
+                                  child: Text(
+                                    event.isRsvped
+                                        ? 'Attending ✓'
+                                        : 'Add to my calendar',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,

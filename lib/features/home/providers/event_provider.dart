@@ -100,6 +100,12 @@ final favoriteEventIdsProvider = StreamProvider<List<String>>((ref) {
   return ref.watch(userRepositoryProvider).watchFavoriteIds(uid);
 });
 
+final rsvpEventIdsProvider = StreamProvider<List<String>>((ref) {
+  final uid = ref.watch(currentUidProvider);
+  if (uid == null) return Stream.value(const <String>[]);
+  return ref.watch(userRepositoryProvider).watchRsvpIds(uid);
+});
+
 // -----------------------------------------------------------------------------
 // 5. Events with isFavorite populated from the user's favorites
 // -----------------------------------------------------------------------------
@@ -108,6 +114,7 @@ final eventsWithFavoriteProvider = Provider<AsyncValue<List<EventModel>>>((
 ) {
   final eventsAsync = ref.watch(eventsProvider);
   final favIdsAsync = ref.watch(favoriteEventIdsProvider);
+  final rsvpAsync = ref.watch(rsvpEventIdsProvider);
 
   if (eventsAsync.hasError) {
     return AsyncValue.error(eventsAsync.error!, eventsAsync.stackTrace!);
@@ -116,10 +123,14 @@ final eventsWithFavoriteProvider = Provider<AsyncValue<List<EventModel>>>((
 
   final events = eventsAsync.value ?? const <EventModel>[];
   final idSet = (favIdsAsync.value ?? const <String>[]).toSet();
+  final rsvpIds = (rsvpAsync.value ?? const <String>[]).toSet();
 
   return AsyncValue.data([
     for (final e in events)
-      idSet.contains(e.id) ? e.copyWith(isFavorite: true) : e,
+      e.copyWith(
+        isFavorite: idSet.contains(e.id),
+        isRsvped: rsvpIds.contains(e.id),
+      ),
   ]);
 });
 
@@ -209,6 +220,12 @@ class EventActions {
     final uid = _ref.read(currentUidProvider);
     if (uid == null) throw StateError('Sign in required.');
     await _ref.read(userRepositoryProvider).toggleFavorite(uid, eventId);
+  }
+
+  Future<void> toggleRsvp(String eventId) async {
+    final uid = _ref.read(currentUidProvider);
+    if (uid == null) throw StateError('Sign in required.');
+    await _ref.read(userRepositoryProvider).toggleRsvp(uid, eventId);
   }
 }
 

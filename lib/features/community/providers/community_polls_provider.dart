@@ -8,9 +8,13 @@ import 'package:event_management_system/features/community/models/poll_dto.dart'
 // -----------------------------------------------------------------------------
 // Raw streams
 // -----------------------------------------------------------------------------
-final _pollsStreamProvider = StreamProvider.autoDispose<List<PollModel>>((ref) {
-  return ref.watch(pollRepositoryProvider).watchAll();
-});
+final _pollsStreamProvider = StreamProvider.family
+    .autoDispose<List<PollModel>, String>((ref, groupId) {
+      if (groupId.isEmpty) {
+        return ref.watch(pollRepositoryProvider).watchAll();
+      }
+      return ref.watch(pollRepositoryProvider).watchByGroup(groupId);
+    });
 
 final _userPollVotesProvider = StreamProvider.autoDispose<Map<String, String>>((
   ref,
@@ -20,9 +24,6 @@ final _userPollVotesProvider = StreamProvider.autoDispose<Map<String, String>>((
   return ref.watch(pollRepositoryProvider).watchUserVotes(uid);
 });
 
-// -----------------------------------------------------------------------------
-// Merged provider — polls + user's votes → PollModel with userVotedOptionId set
-// -----------------------------------------------------------------------------
 List<PollModel> _merge(List<PollModel> polls, Map<String, String> votes) {
   if (votes.isEmpty) return polls;
   return polls.map((poll) {
@@ -32,24 +33,20 @@ List<PollModel> _merge(List<PollModel> polls, Map<String, String> votes) {
   }).toList();
 }
 
-final communityPollsProvider = Provider.autoDispose<AsyncValue<List<PollModel>>>(
-  (ref) {
-    final pollsAsync = ref.watch(_pollsStreamProvider);
-    final votesAsync = ref.watch(_userPollVotesProvider);
+final communityPollsProvider = Provider.family
+    .autoDispose<AsyncValue<List<PollModel>>, String>((ref, groupId) {
+      final pollsAsync = ref.watch(_pollsStreamProvider(groupId));
+      final votesAsync = ref.watch(_userPollVotesProvider);
 
-    // If polls errored, show that. If polls loading, show loading.
-    if (pollsAsync.hasError) {
-      return AsyncValue.error(pollsAsync.error!, pollsAsync.stackTrace!);
-    }
-    if (pollsAsync.isLoading) return const AsyncValue.loading();
+      if (pollsAsync.hasError) {
+        return AsyncValue.error(pollsAsync.error!, pollsAsync.stackTrace!);
+      }
+      if (pollsAsync.isLoading) return const AsyncValue.loading();
 
-    final polls = pollsAsync.value ?? const <PollModel>[];
-
-    // Votes are secondary — if they're still loading, show polls without merge.
-    final votes = votesAsync.value ?? const <String, String>{};
-    return AsyncValue.data(_merge(polls, votes));
-  },
-);
+      final polls = pollsAsync.value ?? const <PollModel>[];
+      final votes = votesAsync.value ?? const <String, String>{};
+      return AsyncValue.data(_merge(polls, votes));
+    });
 
 // -----------------------------------------------------------------------------
 // Actions (create, vote)

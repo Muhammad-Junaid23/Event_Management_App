@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:event_management_system/features/community/providers/groups_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -86,10 +87,12 @@ class _CreateVoteScreenState extends ConsumerState<CreateVoteScreen> {
           );
 
       // 2. Create poll doc in Firestore.
+      final selectedGroupId = ref.read(selectedGroupProvider) ?? 'grp_1';
+
       final req = CreatePollRequest(
         question: _questionController.text.trim(),
         options: _optionControllers.map((c) => c.text.trim()).toList(),
-        groupId: 'grp_1',
+        groupId: selectedGroupId,
       );
 
       await ref

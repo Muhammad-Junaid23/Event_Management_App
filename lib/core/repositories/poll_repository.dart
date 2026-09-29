@@ -25,6 +25,14 @@ class PollRepository {
         .map((s) => s.docs.map(_fromDoc).toList());
   }
 
+  Stream<List<PollModel>> watchByGroup(String groupId) {
+    return _col
+        .where('group', isEqualTo: groupId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map(_fromDoc).toList());
+  }
+
   /// Stream of {pollId: optionId} for a user. Empty map if signed out.
   Stream<Map<String, String>> watchUserVotes(String uid) {
     return _db

@@ -141,6 +141,7 @@ class EventDetailsScreen extends ConsumerWidget {
                                         ),
                                       );
                                       if (confirmed != true) return;
+                                      if (!context.mounted) return; 
 
                                       final messenger = ScaffoldMessenger.of(
                                         context,

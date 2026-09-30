@@ -42,14 +42,14 @@ class AppRoutes {
   static const String createEvent = '/create-event';
   static const String createVote = '/create-vote';
 
-  static final GlobalKey<NavigatorState> _rootNavigatorKey =
+  static final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>();
 
   static GoRouter buildRouter(Ref ref) {
     final refresh = ref.watch(routerRefreshNotifierProvider);
 
     return GoRouter(
-      navigatorKey: _rootNavigatorKey,
+      navigatorKey: rootNavigatorKey,
       initialLocation: splash,
       refreshListenable: refresh,
       redirect: (context, state) {
@@ -96,17 +96,17 @@ class AppRoutes {
         ),
 
         GoRoute(
-          parentNavigatorKey: _rootNavigatorKey,
+          parentNavigatorKey: rootNavigatorKey,
           path: editProfile,
           builder: (context, state) => const EditProfileScreen(),
         ),
         GoRoute(
-          parentNavigatorKey: _rootNavigatorKey,
+          parentNavigatorKey: rootNavigatorKey,
           path: notification,
           builder: (context, state) => NotificationScreen(),
         ),
         GoRoute(
-          parentNavigatorKey: _rootNavigatorKey,
+          parentNavigatorKey: rootNavigatorKey,
           path: '$groupProfile/:groupId',
           builder: (context, state) {
             final groupId = state.pathParameters['groupId'] ?? 'grp_1';
@@ -114,7 +114,7 @@ class AppRoutes {
           },
         ),
         GoRoute(
-          parentNavigatorKey: _rootNavigatorKey,
+          parentNavigatorKey: rootNavigatorKey,
           path: '$eventDetails/:eventId',
           builder: (context, state) {
             final eventId = state.pathParameters['eventId'] ?? '';
@@ -122,7 +122,7 @@ class AppRoutes {
           },
         ),
         GoRoute(
-          parentNavigatorKey: _rootNavigatorKey,
+          parentNavigatorKey: rootNavigatorKey,
           path: createEvent,
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
@@ -131,7 +131,7 @@ class AppRoutes {
           },
         ),
         GoRoute(
-          parentNavigatorKey: _rootNavigatorKey,
+          parentNavigatorKey: rootNavigatorKey,
           path: createVote,
           builder: (context, state) => const CreateVoteScreen(),
         ),

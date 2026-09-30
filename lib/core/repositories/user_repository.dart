@@ -93,6 +93,13 @@ class UserRepository {
       tx.set(ref, {'rsvpEventIds': updated}, SetOptions(merge: true));
     });
   }
+
+  Future<void> updateFcmToken(String uid, String token) async {
+    await _ref(uid).set({
+      'fcmToken': token,
+      'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
 }
 
 final userRepositoryProvider = Provider<UserRepository>((ref) {

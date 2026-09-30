@@ -1,4 +1,5 @@
 import 'package:event_management_system/features/auth/providers/auth_provider.dart';
+import 'package:event_management_system/features/settings/providers/notification_handler_provider.dart';
 import 'package:event_management_system/features/settings/providers/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,8 @@ class EventManagementApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
     final router = ref.watch(_routerProvider);
+    // Initialize the notification handler once.
+    ref.watch(notificationHandlerProvider);
 
     return MaterialApp.router(
       title: 'Event Management System',

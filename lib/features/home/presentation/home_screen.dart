@@ -1,5 +1,7 @@
+import 'package:event_management_system/core/repositories/auth_repository.dart';
 import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:event_management_system/core/widgets/event_search_field.dart';
+import 'package:event_management_system/features/auth/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
@@ -48,6 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Column(
             children: [
               // Header Row
+              const _EmailVerificationBanner(),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20.0,
@@ -217,6 +220,66 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmailVerificationBanner extends ConsumerWidget {
+  const _EmailVerificationBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final verifiedAsync = ref.watch(emailVerifiedProvider);
+    final verified = verifiedAsync.value ?? true; // hide while loading
+
+    if (verified) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.orange.shade800, size: 20),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Please verify your email to unlock all features.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final repo = ref.read(authRepositoryProvider);
+              try {
+                await repo.resendVerificationEmail();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Verification email sent. Check your inbox.',
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text('Failed: $e')));
+                }
+              }
+            },
+            child: const Text(
+              'Resend',
+              style: TextStyle(color: AppColors.primary, fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

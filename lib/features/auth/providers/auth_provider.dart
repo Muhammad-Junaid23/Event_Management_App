@@ -31,6 +31,10 @@ final currentUidProvider = Provider<String?>((ref) {
   return ref.watch(authRepositoryProvider).currentUid;
 });
 
+final emailVerifiedProvider = StreamProvider<bool>((ref) {
+  return ref.watch(authRepositoryProvider).emailVerifiedChanges();
+});
+
 // -----------------------------------------------------------------------------
 // Auth state
 // -----------------------------------------------------------------------------

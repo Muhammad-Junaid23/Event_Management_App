@@ -27,6 +27,15 @@ class AuthRepository {
       password: password,
     );
     await cred.user?.updateDisplayName(name.trim());
+
+    // Send verification email. Non-blocking — signup succeeds even if this
+    // fails (e.g. transient email service error).
+    try {
+      await cred.user?.sendEmailVerification();
+    } catch (_) {
+      // Swallow — user can resend from the banner.
+    }
+
     return cred.user!.uid;
   }
 
@@ -97,6 +106,23 @@ class AuthRepository {
       email: user.email ?? '',
       profileImagePath: user.photoURL ?? '',
     );
+  }
+
+  Future<void> resendVerificationEmail() async {
+    final user = _auth.currentUser;
+    if (user == null) throw StateError('Not signed in.');
+    await user.sendEmailVerification();
+  }
+
+  Future<void> reloadCurrentUser() async {
+    await _auth.currentUser?.reload();
+  }
+
+  bool get isEmailVerified => _auth.currentUser?.emailVerified ?? false;
+
+  /// Emits whenever the user object changes (e.g. emailVerified flips).
+  Stream<bool> emailVerifiedChanges() {
+    return _auth.userChanges().map((u) => u?.emailVerified ?? false);
   }
 }
 

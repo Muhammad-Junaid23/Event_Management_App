@@ -87,6 +87,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   ];
   static const _groups = [
     {'id': 'grp_1', 'name': 'Business group'},
+    {'id': 'grp_2', 'name': 'Sports Club'},
+    {'id': 'grp_3', 'name': 'Tech Community'},
+    {'id': 'grp_4', 'name': 'Book Club'},
   ];
 
   @override

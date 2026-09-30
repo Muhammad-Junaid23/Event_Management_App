@@ -71,6 +71,26 @@ final searchQueryProvider = StateNotifierProvider<SearchQueryNotifier, String>((
 });
 
 // -----------------------------------------------------------------------------
+// "Show only my RSVPs" toggle
+// -----------------------------------------------------------------------------
+class ShowRsvpsOnlyNotifier extends StateNotifier<bool> {
+  ShowRsvpsOnlyNotifier() : super(false);
+  void toggle() => state = !state;
+  void set(bool value) => state = value;
+}
+
+final showRsvpsOnlyProvider =
+    StateNotifierProvider<ShowRsvpsOnlyNotifier, bool>((ref) {
+      return ShowRsvpsOnlyNotifier();
+    });
+
+final myRsvpsProvider = Provider<AsyncValue<List<EventModel>>>((ref) {
+  return ref
+      .watch(eventsWithFavoriteProvider)
+      .whenData((events) => events.where((e) => e.isRsvped).toList());
+});
+
+// -----------------------------------------------------------------------------
 // 2. Selected calendar date
 // -----------------------------------------------------------------------------
 class SelectedDateNotifier extends StateNotifier<DateTime> {

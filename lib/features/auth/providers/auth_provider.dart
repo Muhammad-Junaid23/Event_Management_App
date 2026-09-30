@@ -165,6 +165,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _authRepo.logout();
     state = state.copyWith(isLoggedIn: false, clearError: true);
   }
+
+  Future<void> sendPasswordReset(String email) async {
+    await _authRepo.sendPasswordReset(email);
+  }
 }
 
 // -----------------------------------------------------------------------------

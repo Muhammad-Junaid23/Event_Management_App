@@ -46,3 +46,35 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+
+
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+*.iml
+.idea/
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+android/app/upload-keystore.jks
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# Env / secrets — if you ever add them
+.env
+.env.*
+!.env.example
+
+# Misc
+*.log
+.DS_Store

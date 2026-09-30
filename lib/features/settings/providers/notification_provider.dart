@@ -75,3 +75,10 @@ final notificationProvider =
       NotificationNotifier,
       List<NotificationModel>
     >(NotificationNotifier.new);
+
+/// Number of unread notifications for the current user.
+final unreadNotificationCountProvider = Provider<int>((ref) {
+  final async = ref.watch(notificationProvider);
+  final list = async.value ?? const [];
+  return list.where((n) => n.isUnread).length;
+});

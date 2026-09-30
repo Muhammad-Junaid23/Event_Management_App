@@ -1,9 +1,11 @@
 import 'package:event_management_system/core/widgets/app_lifecycle_reloader.dart';
+import 'package:event_management_system/features/settings/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 
-class MainWrapper extends StatelessWidget {
+class MainWrapper extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const MainWrapper({super.key, required this.navigationShell});
@@ -16,7 +18,7 @@ class MainWrapper extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -58,36 +60,82 @@ class MainWrapper extends StatelessWidget {
                 ? AppColors.darkSurface
                 : AppColors.background,
             elevation: 0,
-            items: const [
-              BottomNavigationBarItem(
+            items: [
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.pets_outlined),
                 activeIcon: Icon(Icons.pets),
                 label: 'Home',
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.star_outline),
                 activeIcon: Icon(Icons.star),
                 label: 'Features',
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.groups_outlined),
                 activeIcon: Icon(Icons.groups),
                 label: 'Community',
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.favorite_border),
                 activeIcon: Icon(Icons.favorite),
                 label: 'Favourite',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.settings_outlined),
-                activeIcon: Icon(Icons.settings),
+                icon: _BadgedIcon(
+                  count: ref.watch(unreadNotificationCountProvider),
+                  icon: Icons.settings_outlined,
+                ),
+                activeIcon: _BadgedIcon(
+                  count: ref.watch(unreadNotificationCountProvider),
+                  icon: Icons.settings,
+                ),
                 label: 'Settings',
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BadgedIcon extends StatelessWidget {
+  final IconData icon;
+  final int count;
+
+  const _BadgedIcon({required this.icon, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    if (count == 0) return Icon(icon);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon),
+        Positioned(
+          right: -6,
+          top: -4,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+            child: Text(
+              count > 9 ? '9+' : '$count',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                height: 1.2,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

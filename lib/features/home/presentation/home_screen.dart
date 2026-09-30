@@ -2,6 +2,7 @@ import 'package:event_management_system/core/repositories/auth_repository.dart';
 import 'package:event_management_system/core/utils/error_messages.dart';
 import 'package:event_management_system/core/widgets/event_search_field.dart';
 import 'package:event_management_system/features/auth/providers/auth_provider.dart';
+import 'package:event_management_system/features/home/models/event_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
@@ -120,76 +121,166 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
+
+              // RSVP filter chip
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 8.0,
+                ),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final showOnlyRsvps = ref.watch(showRsvpsOnlyProvider);
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: FilterChip(
+                        label: Text(
+                          'Going (${ref.watch(myRsvpsProvider).value?.length ?? 0})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: showOnlyRsvps
+                                ? Colors.white
+                                : AppColors.textMain,
+                          ),
+                        ),
+                        selected: showOnlyRsvps,
+                        onSelected: (_) =>
+                            ref.read(showRsvpsOnlyProvider.notifier).toggle(),
+                        backgroundColor: isDark
+                            ? AppColors.darkSurface
+                            : AppColors.tileBackground,
+                        selectedColor: AppColors.primary,
+                        showCheckmark: false,
+                        side: BorderSide(
+                          color: showOnlyRsvps
+                              ? AppColors.primary
+                              : (isDark
+                                    ? AppColors.darkBorderInput
+                                    : AppColors.borderFilterIcon),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
               const SizedBox(height: 16),
 
-              Expanded(
+             Expanded(
                 child: _selectedView == 0
                     ? const CalendarViewWidget()
-                    : ref
-                          .watch(filteredEventsProvider(EventFilterScope.home))
-                          .when(
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            error: (e, _) => Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    size: 48,
-                                    color: AppColors.primary,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    friendlyError(e),
+                    : Consumer(
+                        builder: (context, ref, _) {
+                          final showOnlyRsvps = ref.watch(
+                            showRsvpsOnlyProvider,
+                          );
+
+                          // When the "Going" chip is on, bypass filters entirely and use
+                          // the RSVP list directly.
+                          if (showOnlyRsvps) {
+                            final rsvps =
+                                ref.watch(myRsvpsProvider).value ??
+                                const <EventModel>[];
+                            if (rsvps.isEmpty) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(24),
+                                  child: Text(
+                                    "You haven't RSVP'd to any events yet.",
                                     textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: AppColors.textCardSubtitle,
+                                    ),
                                   ),
-                                  const SizedBox(height: 16),
-                                  TextButton(
-                                    onPressed: () =>
-                                        ref.invalidate(eventsProvider),
-                                    child: const Text(
-                                      'Retry',
-                                      style: TextStyle(
+                                ),
+                              );
+                            }
+                            return ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 8,
+                              ),
+                              itemCount: rsvps.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) =>
+                                  EventCard(event: rsvps[index]),
+                            );
+                          }
+
+                          // Otherwise, the normal filtered list.
+                          return ref
+                              .watch(
+                                filteredEventsProvider(EventFilterScope.home),
+                              )
+                              .when(
+                                loading: () => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                                error: (e, _) => Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.error_outline,
+                                        size: 48,
                                         color: AppColors.primary,
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            data: (events) {
-                              if (events.isEmpty) {
-                                final query = ref.watch(searchQueryProvider);
-                                return Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(24),
-                                    child: Text(
-                                      query.isEmpty
-                                          ? 'No matching events found'
-                                          : 'No events match "$query"',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: AppColors.textCardSubtitle,
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        friendlyError(e),
+                                        textAlign: TextAlign.center,
                                       ),
-                                    ),
+                                      const SizedBox(height: 16),
+                                      TextButton(
+                                        onPressed: () =>
+                                            ref.invalidate(eventsProvider),
+                                        child: const Text(
+                                          'Retry',
+                                          style: TextStyle(
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                );
-                              }
-                              return ListView.separated(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 8,
                                 ),
-                                itemCount: events.length,
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(height: 12),
-                                itemBuilder: (context, index) =>
-                                    EventCard(event: events[index]),
+                                data: (events) {
+                                  if (events.isEmpty) {
+                                    final query = ref.watch(
+                                      searchQueryProvider,
+                                    );
+                                    return Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Text(
+                                          query.isEmpty
+                                              ? 'No matching events found'
+                                              : 'No events match "$query"',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: AppColors.textCardSubtitle,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return ListView.separated(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 8,
+                                    ),
+                                    itemCount: events.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(height: 12),
+                                    itemBuilder: (context, index) =>
+                                        EventCard(event: events[index]),
+                                  );
+                                },
                               );
-                            },
-                          ),
+                        },
+                      ),
               ),
             ],
           ),

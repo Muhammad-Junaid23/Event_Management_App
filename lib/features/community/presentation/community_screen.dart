@@ -263,75 +263,92 @@ class CommunityScreen extends ConsumerWidget {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: SafeArea(
-          top: false,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.7,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    'Switch group',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: SafeArea(
+            top: false,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      'Switch group',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
                   ),
-                ),
-                Flexible(
-                  child: ListView(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    children: [
-                      for (final g in groups)
-                        ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.primaryTransparent,
-                            child: ClipOval(
-                              child: SizedBox(
-                                width: 40,
-                                height: 40,
-                                child: buildSmartImage(
-                                  g.imageUrl,
-                                  fit: BoxFit.cover,
-                                  fallbackAsset: AppAssets.businessGroup,
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      children: [
+                        for (final g in groups)
+                          ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.primaryTransparent,
+                              child: ClipOval(
+                                child: SizedBox(
+                                  width: 40,
+                                  height: 40,
+                                  child: buildSmartImage(
+                                    g.imageUrl,
+                                    fit: BoxFit.cover,
+                                    fallbackAsset: AppAssets.businessGroup,
+                                  ),
                                 ),
                               ),
                             ),
+                            title: Text(
+                              g.name,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${(g.memberCount / 1000).toStringAsFixed(0)}K members',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.darkTextBody
+                                    : AppColors.textCardSubtitle,
+                              ),
+                            ),
+                            trailing: g.groupId == selectedId
+                                ? const Icon(
+                                    Icons.check,
+                                    color: AppColors.primary,
+                                  )
+                                : null,
+                            onTap: () {
+                              ref
+                                  .read(selectedGroupProvider.notifier)
+                                  .select(g.groupId);
+                              Navigator.pop(ctx);
+                            },
                           ),
-                          title: Text(g.name),
-                          subtitle: Text(
-                            '${(g.memberCount / 1000).toStringAsFixed(0)}K members',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          trailing: g.groupId == selectedId
-                              ? const Icon(
-                                  Icons.check,
-                                  color: AppColors.primary,
-                                )
-                              : null,
-                          onTap: () {
-                            ref
-                                .read(selectedGroupProvider.notifier)
-                                .select(g.groupId);
-                            Navigator.pop(ctx);
-                          },
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

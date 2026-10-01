@@ -141,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             fontWeight: FontWeight.w600,
                             color: showOnlyRsvps
                                 ? Colors.white
-                                : AppColors.textMain,
+                                : (isDark ? Colors.white : AppColors.textMain),
                           ),
                         ),
                         selected: showOnlyRsvps,

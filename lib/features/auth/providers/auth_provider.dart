@@ -27,7 +27,10 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
 });
 
 /// Current Firebase uid, or null if signed out.
+/// Re-computes whenever Firebase auth state changes.
 final currentUidProvider = Provider<String?>((ref) {
+  // Watching authStateChanges forces this provider to rebuild on login/logout.
+  ref.watch(authStateChangesProvider);
   return ref.watch(authRepositoryProvider).currentUid;
 });
 

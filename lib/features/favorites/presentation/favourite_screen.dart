@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
-import 'package:event_management_system/core/widgets/event_card.dart';
+import 'package:event_management_system/core/widgets/event_card_compact.dart';
 import 'package:event_management_system/features/home/providers/event_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -101,7 +101,7 @@ class FavouriteScreen extends ConsumerWidget {
                             final formattedDate = DateFormat(
                               'EEE, d MMM yyyy, h:mm a',
                             ).format(event.dateTime);
-                            return EventCard(
+                            return EventCardCompact(
                               title: event.title,
                               dateText: formattedDate,
                               locationText: event.location,

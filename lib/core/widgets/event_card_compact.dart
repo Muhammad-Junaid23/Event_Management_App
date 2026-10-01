@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:event_management_system/app/constants/app_colors.dart';
 
-class EventCard extends StatelessWidget {
+class EventCardCompact extends StatelessWidget {
   final Widget? topWidget;
   final String title;
   final String? dateText;
@@ -16,7 +16,7 @@ class EventCard extends StatelessWidget {
   final VoidCallback? onFavoriteTap;
   final VoidCallback? onTap; // Added tap callback
 
-  const EventCard({
+  const EventCardCompact({
     super.key,
     this.topWidget,
     required this.title,

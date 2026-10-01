@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/event_provider.dart';
-import '../../../../app/constants/app_colors.dart';
+import 'package:event_management_system/features/home/providers/event_provider.dart';
+
+import 'package:event_management_system/app/constants/app_colors.dart';
 
 class FilterBottomSheet extends ConsumerStatefulWidget {
   final EventFilterScope scope;

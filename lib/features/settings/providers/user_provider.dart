@@ -3,7 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:event_management_system/core/repositories/user_repository.dart';
 import 'package:event_management_system/core/services/image_upload_service.dart';
-import 'package:event_management_system/features/auth/domain/user_model.dart';
+import 'package:event_management_system/features/auth/models/user_model.dart';
 import 'package:event_management_system/features/auth/providers/auth_provider.dart';
 import 'package:event_management_system/features/settings/models/user_dto.dart';
 

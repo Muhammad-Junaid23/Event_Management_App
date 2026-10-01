@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:event_management_system/core/providers/firebase_providers.dart';
-import 'package:event_management_system/features/auth/domain/user_model.dart';
+import 'package:event_management_system/features/auth/models/user_model.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 

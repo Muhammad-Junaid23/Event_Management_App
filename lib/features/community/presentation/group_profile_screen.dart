@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
-import 'package:event_management_system/core/widgets/event_card.dart';
+import 'package:event_management_system/core/widgets/event_card_compact.dart';
 import 'package:event_management_system/features/community/models/group_profile_model.dart';
 import 'package:event_management_system/features/community/providers/group_profile_provider.dart';
 import 'package:event_management_system/features/home/providers/event_provider.dart';
@@ -221,7 +221,7 @@ class GroupProfileScreen extends ConsumerWidget {
                     final formattedDate = DateFormat('dd MMMM yyyy h:mma')
                         .format(event.dateTime);
 
-                    return EventCard(
+                    return EventCardCompact(
                       title: event.title,
                       dateText: formattedDate,
                       locationText: '${event.location}, ${event.city}',

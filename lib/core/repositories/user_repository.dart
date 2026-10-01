@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:event_management_system/core/constants/firestore_paths.dart';
 import 'package:event_management_system/core/providers/firebase_providers.dart';
-import 'package:event_management_system/features/auth/domain/user_model.dart';
+import 'package:event_management_system/features/auth/models/user_model.dart';
 import 'package:event_management_system/features/settings/models/user_dto.dart';
 
 class UserRepository {

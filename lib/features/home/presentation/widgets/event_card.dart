@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:event_management_system/core/widgets/custom_image_wrapper.dart';
 
-import '../../models/event_model.dart';
-import '../../providers/event_provider.dart';
-import '../../../../app/constants/app_colors.dart';
+import 'package:event_management_system/features/home/models/event_model.dart';
+import 'package:event_management_system/features/home/providers/event_provider.dart';
+import 'package:event_management_system/app/constants/app_colors.dart';
 
 class EventCard extends ConsumerWidget {
   final EventModel event;

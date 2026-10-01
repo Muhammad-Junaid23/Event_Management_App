@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_management_system/app/constants/app_colors.dart';
 import 'package:event_management_system/app/constants/app_assets.dart';
-import 'package:event_management_system/core/widgets/event_card.dart';
+import 'package:event_management_system/core/widgets/event_card_compact.dart';
 import 'package:intl/intl.dart';
 
 class FeaturesScreen extends ConsumerStatefulWidget {
@@ -144,7 +144,7 @@ class _FeaturesScreenState extends ConsumerState<FeaturesScreen> {
                         final formattedDate = DateFormat(
                           'EEE, d MMM yyyy, h:mm a',
                         ).format(event.dateTime);
-                        return EventCard(
+                        return EventCardCompact(
                           title: event.title,
                           dateText: formattedDate,
                           locationText: '${event.location}, ${event.city}',

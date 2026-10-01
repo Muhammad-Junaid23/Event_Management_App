@@ -1,3 +1,8 @@
+![Flutter](https://img.shields.io/badge/Flutter-3.x-blue?logo=flutter)
+![Firebase](https://img.shields.io/badge/Firebase-Firestore%20%7C%20Auth-orange?logo=firebase)
+![Riverpod](https://img.shields.io/badge/Riverpod-2.6-purple)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 # Event Management System
 
 Flutter event management app with Firebase backend.
